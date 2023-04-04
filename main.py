@@ -204,51 +204,121 @@ else:
 #############################################################################################
 #Выподающая страница
 ##############################################################################################
-collaps_titles  = []
-collaps_main_title_mass = []
-block_sec_info_mass = []
-collaps_main = []
-collaps_data = {}
-fgh = 0
-collaps_content = soup.find_all( 'div', class_ = 'blockInfo__collapse collapseInfo')
-if collaps_content != None:
-    for infos in collaps_content:
-        collaps_title = infos.find( class_ = 'collapse__title_text').get_text()
-        collaps_title = collaps_title.replace('\n', '').replace('\xa0', ' ')
-        collaps_titles.append(collaps_title)
-        content_block_info  = infos.find_all('div', class_="content__block blockInfo")
-        collaps_data[0] = collaps_title
-        for item in content_block_info:
+def collapse_element():
+    i = 0
+    j = 0
+    collaps_titles  = []
+    collaps_main_title_mass = []
+    cont_main_title_mass = []
+    th_mass = []
+    titls_table_main = []
+    collaps_main = []
+    collaps_data = {}
+    conteiner_text = []
+    table_data = {}
+    conteiner_titls_data = {}
+    fgh = 0
+    collaps_content = soup.find_all( 'div', class_ = 'blockInfo__collapse collapseInfo')
+    if collaps_content != None:
+        for infos in collaps_content:
+            collaps_title = infos.find( class_ = 'collapse__title_text').get_text()
+            collaps_title = collaps_title.replace('\n', '').replace('\xa0', ' ')
+            collaps_titles.append(collaps_title)
+            content_block_info  = infos.find_all('div', class_="content__block blockInfo")
+            collaps_data[0] = collaps_title
+            for item in content_block_info:
 
-            block_info_title = item.find( class_ = 'blockInfo__title').get_text()
-            collaps_titles.append(block_info_title)
-            block_sec_title = item.find_all(class_='section__title')
-            for its in block_sec_title:
-                collaps_main_title_mass.append(its.get_text().replace('\n', ''))
-            block_sec_info = item.find_all(class_='section__info')
-            for it in block_sec_info:
-                # block_sec_info_mass.append(it.get_text().replace('\n', '').replace('\xa0', ' '))
-                try:
-                    collaps_main.append(
-                        {collaps_main_title_mass[fgh]: it.get_text().replace('\n', '').replace('\xa0', ' ')})
-                except IndexError:
-                    collaps_main.append({'': it.get_text().replace('\n', '').replace('\xa0', ' ')})
-                fgh = fgh +1
-        #     if(block_sec_title != None):
-        #         block_sec_title = item.find(class_='section__title').get_text()
-        #         block_sec_info= item.find(class_='section__info').get_text()
-        #         collaps_main.append({block_sec_title:block_sec_info})
-            collaps_data[block_info_title] = collaps_main
-            collaps_main = []
-print(collaps_data)
+                block_info_title = item.find( class_ = 'blockInfo__title').get_text()
+                collaps_titles.append(block_info_title)
+                block_sec_title = item.find_all(class_='section__title')
+                for its in block_sec_title:
+                    collaps_main_title_mass.append(its.get_text().replace('\n', ''))
+                block_sec_info = item.find_all(class_='section__info')
+                for it in block_sec_info:
+                    # block_sec_info_mass.append(it.get_text().replace('\n', '').replace('\xa0', ' '))
+                    try:
+                        collaps_main.append(
+                            {collaps_main_title_mass[fgh]: it.get_text().replace('\n', '').replace('\xa0', ' ')})
+                    except IndexError:
+                        collaps_main.append({'': it.get_text().replace('\n', '').replace('\xa0', ' ')})
+                    fgh = fgh +1
+            #     if(block_sec_title != None):
+            #         block_sec_title = item.find(class_='section__title').get_text()
+            #         block_sec_info= item.find(class_='section__info').get_text()
+            #         collaps_main.append({block_sec_title:block_sec_info})
+                collaps_data[block_info_title] = collaps_main
+                collaps_main = []
+            #####парсинг таблицы
+            conteiner_table= infos.find_all('div', class_="container")
+            if conteiner_table != None:
+                conteiner_table = infos.find_all('div', class_="container")
+
+                ###################################################
+                #Парсинг значений таблицы
+                for tb in conteiner_table:
+                    # может быть несколько тайтлов\ пока только один
+                    row_block_info = tb.find_all(class_ = 'row blockInfo')
+                    for rower in row_block_info:
+                        tit = rower.find(class_ = 'blockInfo__title').get_text().strip()
+
+                    block_info = tb.find_all(class_='blockInfo__section')
+                    for bs in block_info:
+                        cont_sec_title = bs.find_all(class_='section__title')
+                        for its in cont_sec_title:
+                            cont_main_title_mass.append(its.get_text().strip().replace('\n', ''))
+                        cont_sec_info = bs.find_all(class_='section__info')
+                        for its in cont_sec_info:
+                            try:
+                                titls_table_main.append(
+                                    {cont_main_title_mass[j]: its.get_text().replace('\n', '').replace('\xa0',
+                                                                                                       ' ').strip()})
+                            except IndexError:
+                                titls_table_main.append(
+                                    {'': its.get_text().replace('\n', '').replace('\xa0', ' ').strip()})
+
+                            j = j + 1
+                        conteiner_titls_data[tit] = titls_table_main
+                    t = j
+                    #Поиск всех элементов таблицы
+                    tablos = tb.find_all('table')
+                    for tbn in tablos:
+                        c_th = tbn.find_all('th')
+                        for th_items in c_th:
+                            th_text = th_items.get_text().strip()
+                            th_mass.append(th_text)
+
+                        c_td = tbn.find_all('td')
+                        for td_items in c_td:
+                            td_text = td_items.get_text().strip()
+                            try:
+                                conteiner_text.append({th_mass[i]: td_text})
+                            except Exception:
+                                conteiner_text.append({'': td_text})
+                            i += 1
+
+                        table_data[cont_main_title_mass[t]] = conteiner_text
+                        t = t + 1
+                        conteiner_text = []
+        collaps_data.update(conteiner_titls_data)
+        collaps_data.update(table_data)
+        return collaps_data
+
+
+
+#     print(conteiner_titls_data)
+# collapse_element()
+
+#############################################
+#!!!!!!!!!!!!!!!!!!!!!!!Добавить conteiner Этого класса!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 
 
 #########################################################################
 #JSON#####
 with open("collaps_data.json", "a", encoding="utf-8") as file:
-    json.dump(collaps_data, file, indent=4, ensure_ascii=False)
-
+    json.dump(collapse_element(), file, indent=4, ensure_ascii=False)
+#########################################################################
 # for element in data_td:
 #     element = element.split(' ')
 # stringus = 'СварочныйаппаратНеобходимоенапряжениесети380ВСварочныйток'
