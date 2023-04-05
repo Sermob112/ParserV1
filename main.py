@@ -38,169 +38,189 @@ soup = BeautifulSoup(source, 'lxml')
 #основная информация
 ######################################################
 #Серийный номер
-serial_number = soup.find(class_="registry-entry__header-mid__number")
-if serial_number != None:
-    serial_number = soup.find(class_="registry-entry__header-mid__number").find('a').text.strip()
-else:
-    serial_number = soup.find('a', {'class': 'distancedText'})
-    regNumber = serial_number['href'].split('=')[1]
+def parse_head():
+    mass = []
+    serial_date = {}
+    serial_number = soup.find(class_="registry-entry__header-mid__number")
+    if serial_number != None:
+        serial_number = soup.find(class_="registry-entry__header-mid__number").find('a').text.strip()
+    else:
+        serial_number = soup.find('a', {'class': 'distancedText'})
+        regNumber = serial_number['href'].split('=')[1]
+        status_text = soup.find(class_= 'cardMainInfo__state distancedText').get_text().strip()
+        mass.append({regNumber:status_text})
+
+#####Сведенья о закупке###########################
+    svedenia_o_zakupke = []
+    zakupchik = soup.find(class_ = 'registry-entry__body')
+    if zakupchik != None:
+        zakupchik = soup.find(class_ = 'registry-entry__body').find_all(class_ = 'registry-entry__body-block')
+        for i in zakupchik:
+            object_zak = i.find(class_ = 'registry-entry__body-title').text.strip()
+            zakazchic = i.find(class_ = 'registry-entry__body-value').text.strip()
+            svedenia_o_zakupke.append({object_zak: zakazchic})
+            a_tag = i.find('a')
+            if a_tag == None:
+                continue
+            else:
+                link = 'https://zakupki.gov.ru' + a_tag["href"]
+            svedenia_o_zakupke.append({object_zak: zakazchic, 'ссылка на огранизацию': link})
+    else:
+        zakupchik = soup.find(class_='sectionMainInfo__body').find_all(class_='cardMainInfo__section')
+        for i in zakupchik:
+            object_zak = i.find(class_='cardMainInfo__title').text.strip()
+            zakazchic = i.find(class_='cardMainInfo__content').text.strip()
+            svedenia_o_zakupke.append({object_zak: zakazchic})
+            a_tag = i.find('a')
+            if a_tag == None:
+                continue
+            else:
+                link = 'https://zakupki.gov.ru' + a_tag["href"]
+            mass.append({object_zak:zakazchic, 'ссылка на огранизацию':link})
+
+    # link = a_tag["href"]
 
 
 #######################################
 #Сведенья о закупе (начальная цена и пр)
-# zakupchik  = soup.find(class_ = 'registry-entry__body').text.strip()# Нашли всех закупщиков
-#####Сведенья о закупке###########################
-svedenia_o_zakupke = []
-zakupchik = soup.find(class_ = 'registry-entry__body')
-if zakupchik != None:
-    zakupchik = soup.find(class_ = 'registry-entry__body').find_all(class_ = 'registry-entry__body-block')
-    for i in zakupchik:
-        object_zak = i.find(class_ = 'registry-entry__body-title').text.strip()
-        zakazchic = i.find(class_ = 'registry-entry__body-value').text.strip()
-        svedenia_o_zakupke.append({object_zak: zakazchic})
-        a_tag = i.find('a')
-        if a_tag == None:
-            continue
-        else:
-            link = 'https://zakupki.gov.ru' + a_tag["href"]
-        svedenia_o_zakupke.append({object_zak: zakazchic, 'ссылка на огранизацию': link})
-else:
-    zakupchik = soup.find(class_='sectionMainInfo__body').find_all(class_='cardMainInfo__section')
-    for i in zakupchik:
-        object_zak = i.find(class_='cardMainInfo__title').text.strip()
-        zakazchic = i.find(class_='cardMainInfo__content').text.strip()
-        svedenia_o_zakupke.append({object_zak: zakazchic})
-        a_tag = i.find('a')
-        if a_tag == None:
-            continue
-        else:
-            link = 'https://zakupki.gov.ru' + a_tag["href"]
-        svedenia_o_zakupke.append({object_zak:zakazchic, 'ссылка на огранизацию':link})
-    # link = a_tag["href"]
-# print(svedenia_o_zakupke)
-
-# print(zakupchik)
-# ###########################################################################################################
 # ####Начальная цена
-priece_info = []
-price = soup.find(class_ = 'price-block')
-locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
-if price != None:
-    price = soup.find(class_ = 'price-block').find_all('div')
-    for i in price:
-        title = i.text
-else:
-    price = soup.find(class_='sectionMainInfo borderRight col-3 colSpaceBetween').find_all('span')
-    for i in price:
-        title = i.text.strip()
-        if '\xa0' in title:
-            title = title.replace('\xa0', '')  # remove non-breaking spaces
-            title = title.replace(',', '.')  # replace comma with dot
-        priece_info.append(title)
-result = []
-for i in range(0, len(priece_info), 2):
-    key = priece_info[i]
-    value = priece_info[i+1] if i+1 < len(priece_info) else ''
-    result.append({key: value})
+    priece_info = []
+    price = soup.find(class_ = 'price-block')
+    locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
+    if price != None:
+        price = soup.find(class_ = 'price-block').find_all('div')
+        for i in price:
+            title = i.text
+    else:
+        price = soup.find(class_='sectionMainInfo borderRight col-3 colSpaceBetween').find_all('span')
+        for i in price:
+            title = i.text.strip()
+            if '\xa0' in title:
+                title = title.replace('\xa0', '')  # remove non-breaking spaces
+                title = title.replace(',', '.')  # replace comma with dot
+            priece_info.append(title)
+    result = []
+    for i in range(0, len(priece_info), 2):
+        key = priece_info[i]
+        value = priece_info[i+1] if i+1 < len(priece_info) else ''
+        # result.append({key: value})
+        mass.append({key: value})
+        serial_date['Номер заказа'] = mass
+    return serial_date
 
-# print(result)
-# print(priece_info)
-# print(price)
+
+
 # ###########################################################################################################
 # #Парсинг всех ссылок на информацию
-tabs_of_links = []
-link_razdels = soup.find(class_ = 'tabsNav d-flex')
-if link_razdels != None:
-    link_razdels = soup.find(class_ = 'tabsNav d-flex').find_all('a')
-    for links in link_razdels:
-        linkl = 'https://zakupki.gov.ru/' + links.get('href')
-        title_razde = links.text.strip()
-        tabs_of_links.append({title_razde:linkl})
-else:
-    link_razdels = soup.find(class_='tabsNav d-flex align-items-end').find_all('a')
-    for links in link_razdels:
-        linkl = 'https://zakupki.gov.ru/' + links.get('href')
-        title_razde = links.text.strip()
-        tabs_of_links.append({title_razde:linkl})
-
+def all_link():
+    tabs_of_links = []
+    link_razdels = soup.find(class_ = 'tabsNav d-flex')
+    if link_razdels != None:
+        link_razdels = soup.find(class_ = 'tabsNav d-flex').find_all('a')
+        for links in link_razdels:
+            linkl = 'https://zakupki.gov.ru/' + links.get('href')
+            title_razde = links.text.strip()
+            tabs_of_links.append({title_razde:linkl})
+    else:
+        link_razdels = soup.find(class_='tabsNav d-flex align-items-end').find_all('a')
+        for links in link_razdels:
+            linkl = 'https://zakupki.gov.ru/' + links.get('href')
+            title_razde = links.text.strip()
+            tabs_of_links.append({title_razde:linkl})
+    return tabs_of_links
+# print(all_link())
 # ##################################################################################
 #Парсинг сведений о закупке
+def main_info_body():
+    main_infp = soup.find_all(class_ ='common-text b-bottom pb-3')
+    list_info = []
+    all_table_info = []
+    data_td = []
+    block_title = []
+    new_dict = {}
+    table_info = []
+    if len(main_infp) != 0:
+    # title_cap = soup.find(class_= 'common-text__caption').text.strip()
+    # print(title_cap)
+        for info in main_infp:
+            #весь текст
+            # zagolovok = info.text.strip()
+            col_9 = info.find_all(class_='col-9 mr-auto')
+            title_cap = info.find(class_='common-text__caption').text.strip()
+            list_info.append({title_cap})
+            for values in col_9:
+                # title_cap = info.find(class_='common-text__caption')
 
-main_infp = soup.find_all(class_ ='common-text b-bottom pb-3')
-list_info = []
-all_table_info = []
-data_td = []
-block_title = []
-new_dict = {}
-if len(main_infp) != 0:
-# title_cap = soup.find(class_= 'common-text__caption').text.strip()
-# print(title_cap)
-    for info in main_infp:
-        #весь текст
-        # zagolovok = info.text.strip()
-        col_9 = info.find_all(class_='col-9 mr-auto')
-        title_cap = info.find(class_='common-text__caption').text.strip()
-        list_info.append({title_cap})
-        for values in col_9:
-            # title_cap = info.find(class_='common-text__caption')
-
-            title_text = values.find(class_= 'common-text__title')
-            value_text = values.find(class_= 'common-text__value')
-            if (title_text == None  or value_text == None):
-                continue
-            else:
-                title_text = values.find(class_='common-text__title').text.strip()
-                value_text = values.find(class_='common-text__value').text.strip()
-            list_info.append({title_text:value_text})
-
-
-else:
-    b = 0
-    main_infp = soup.find_all(class_='row blockInfo')
-    for info in main_infp:
-        # col_9 = info.find_all(class_='blockInfo__section section')
-        col_9 = info.find_all(class_='blockInfo__section')
-        title_cap = info.find(class_='blockInfo__title').get_text().strip()
-        collabs = info.find(class_= 'collapse__content collapse__content0')
-        block_title.append(title_cap)
-        for values in col_9:
-            title_text = values.find(class_='section__title')
-            value_text = values.find(class_='section__info')
-            if (title_text == None  or value_text == None):
-                continue
-            else:
-                title_text = values.find(class_='section__title').get_text().strip()
-                value_text = values.find(class_='section__info').get_text().strip()
-                if '\n' in title_text or '\n' in value_text:
-                    title_text = title_text.replace('\n', '')  # remove non-breaking spaces
-                    value_text = value_text.replace('\n', '')
-                if ' ' in value_text:
-                    value_text = value_text.replace(' ', '')  # remove non-breaking spaces
+                title_text = values.find(class_= 'common-text__title')
+                value_text = values.find(class_= 'common-text__value')
+                if (title_text == None  or value_text == None):
+                    continue
+                else:
+                    title_text = values.find(class_='common-text__title').text.strip()
+                    value_text = values.find(class_='common-text__value').text.strip()
                 list_info.append({title_text:value_text})
-        new_dict[title_cap] = list_info
-        list_info = []
-        b = b + 1
-        table = info.find(class_ ='blockInfo__table tableBlock')
-        if table != None:
-            table = info.find(class_='blockInfo__table tableBlock')
-            hiegth_row = table.find_all('th')
-            table_td = table.find_all('td')
 
-            for i in hiegth_row:
-                column_name = i.text.strip()
-                all_table_info.append(column_name)
-                # print(column_name)
-            for i in table_td:
-                td = i.text.strip()
-                if '\n' in td:
-                    td = td.replace('\n', '')  # remove non-breaking spaces
-                    td = td.replace(' ','')
-                    td = re.findall('[A-ZА-Я][^A-ZА-Я]*', td)
-                if '\xa0' in td:
-                    td = td.replace('\xa0', '')  # remove non-breaking spaces
-                    td = td.replace(',', '.')  # replace comma with dot
-                data_td.append(td)
-# print(block_title)
+
+    else:
+        b = 0
+        n = 0
+        main_infp = soup.find_all(class_='row blockInfo')
+        for info in main_infp:
+            # col_9 = info.find_all(class_='blockInfo__section section')
+            col_9 = info.find_all(class_='blockInfo__section')
+            title_cap = info.find(class_='blockInfo__title').get_text().strip()
+            block_title.append(title_cap)
+            for values in col_9:
+                title_text = values.find(class_='section__title')
+                value_text = values.find(class_='section__info')
+                if (title_text == None  or value_text == None):
+                    continue
+                else:
+                    title_text = values.find(class_='section__title').get_text().strip()
+                    value_text = values.find(class_='section__info').get_text().strip()
+                    if '\n' in title_text or '\n' in value_text:
+                        title_text = title_text.replace('\n', '')  # remove non-breaking spaces
+                        value_text = value_text.replace('\n', '')
+                    if ' ' in value_text:
+                        value_text = value_text.replace(' ', '')  # remove non-breaking spaces
+                    list_info.append({title_text:value_text})
+            # new_dict[title_cap] = list_info
+            # list_info = []
+            # b = b + 1
+            table = info.find_all(class_ ='blockInfo__table tableBlock')
+            if table != None:
+                for tables in table:
+                    # table = info.find(class_='blockInfo__table tableBlock')
+                    hiegth_row = tables.find_all('th')
+                    table_td = tables.find_all('td', class_ ='tableBlock__col')
+
+                    for i in hiegth_row:
+                        column_name = i.text.strip()
+                        all_table_info.append(column_name)
+                        # print(column_name)
+                    for i in table_td:
+                        td = i.get_text().strip()
+                        if(td == ''):
+                            continue
+                        if '\n' in td:
+                            td = td.replace('\n', '') # remove non-breaking spaces
+                            td = re.findall('[A-ZА-Я][^A-ZА-Я]*', td)
+                        if '\xa0' in td:
+                            td = td.replace('\xa0', '').replace(',', '.')   # remove non-breaking spaces
+
+                        data_td.append(td)
+                        try:
+                            list_info.append({all_table_info[n]:td})
+                        except IndexError:
+                            # continue
+                            list_info.append({'': td})
+                        n = n + 1
+            new_dict[title_cap] = list_info
+            list_info = []
+            b = b + 1
+        # return data_td
+        return new_dict
+# print(main_info_body())
 #############################################################################################
 #Выподающая страница
 ##############################################################################################
@@ -316,9 +336,19 @@ def collapse_element():
 
 #########################################################################
 #JSON#####
-with open("collaps_data.json", "a", encoding="utf-8") as file:
-    json.dump(collapse_element(), file, indent=4, ensure_ascii=False)
-#########################################################################
+def Make_Json():
+    global_dict = {}
+    global_dict.update(parse_head())
+    global_dict.update(main_info_body())
+    global_dict.update(collapse_element())
+    with open("all_info.json", "a", encoding="utf-8") as file:
+        json.dump(global_dict, file, indent=4, ensure_ascii=False)
+#######################################################################
+Make_Json()
+
+# print(parse_head())
+# print(main_info_body())
+# print(collapse_element())
 # for element in data_td:
 #     element = element.split(' ')
 # stringus = 'СварочныйаппаратНеобходимоенапряжениесети380ВСварочныйток'
