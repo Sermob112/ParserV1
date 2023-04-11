@@ -20,24 +20,41 @@ import json
 #
 # test_url = 'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId=15097592'
 # test_url2 = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/common-info.html?regNumber=0124200000623001098'
+# test_url3 = 'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber=0172500000423000006'
 # HEADERS_test = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-#                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36',
-#            'accept': '*/*'}
+#                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36','accept': '*/*'}
 # req = requests.get(test_url, headers= HEADERS_test)
 # src = req.text
 # req = requests.get(test_url2, headers= HEADERS_test, params= None)
 # src = req.text
 # print(src)
-#
-# with open("index2.html", 'w', encoding="utf-8") as file:
+# req = requests.get(test_url3, headers= HEADERS_test, params= None)
+# src = req.text
+# with open("index3.html", 'w', encoding="utf-8") as file:
 #     file.write(src)
-with open ('index2.html','r', encoding="utf-8") as file:
-    source = file.read()
-soup = BeautifulSoup(source, 'lxml')
+# with open ('index2.html','r', encoding="utf-8") as file:
+#     source = file.read()
+
+def agent():
+    test_url3 = 'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber=0172500000423000006'
+    HEADERS_test = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                      ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+
+    req = requests.get(test_url3, headers=HEADERS_test, params=None)
+    src = req.text
+    with open("index3.html", 'w', encoding="utf-8") as file:
+        file.write(src)
+    with open ('index3.html','r', encoding="utf-8") as file:
+        source = file.read()
+    soup = BeautifulSoup(source, 'lxml')
+    return  soup
+
 ##############################################################################################################
 #основная информация
 ######################################################
 #Серийный номер
+soup = agent()
 def parse_head():
     mass = []
     serial_date = {}
@@ -77,6 +94,7 @@ def parse_head():
             else:
                 link = 'https://zakupki.gov.ru' + a_tag["href"]
             mass.append({object_zak:zakazchic, 'ссылка на огранизацию':link})
+        mass.append(svedenia_o_zakupke)
 
     # link = a_tag["href"]
 
@@ -192,7 +210,7 @@ def main_info_body():
                 for tables in table:
                     # table = info.find(class_='blockInfo__table tableBlock')
                     hiegth_row = tables.find_all('th')
-                    table_td = tables.find_all('td', class_ ='tableBlock__col')
+                    table_td = tables.find_all('td')
 
                     for i in hiegth_row:
                         column_name = i.text.strip()
@@ -220,6 +238,7 @@ def main_info_body():
             b = b + 1
         # return data_td
         return new_dict
+print(main_info_body())
 # print(main_info_body())
 #############################################################################################
 #Выподающая страница
@@ -341,7 +360,7 @@ def Make_Json():
     global_dict.update(parse_head())
     global_dict.update(main_info_body())
     global_dict.update(collapse_element())
-    with open("all_info.json", "a", encoding="utf-8") as file:
+    with open("all_info_test.json", "a", encoding="utf-8") as file:
         json.dump(global_dict, file, indent=4, ensure_ascii=False)
 #######################################################################
 Make_Json()
