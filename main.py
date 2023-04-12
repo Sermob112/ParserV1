@@ -131,25 +131,25 @@ def parse_head():
 # ###########################################################################################################
 # #Парсинг всех ссылок на информацию
 def all_link():
-    tabs_of_links = []
+    tabs_of_links = {}
     link_razdels = soup.find(class_ = 'tabsNav d-flex')
-    if link_razdels != None:
+    try:
         link_razdels = soup.find(class_ = 'tabsNav d-flex').find_all('a')
         for links in link_razdels:
             linkl = 'https://zakupki.gov.ru/' + links.get('href')
             title_razde = links.text.strip()
             tabs_of_links.append({title_razde:linkl})
-    else:
+    except Exception:
         link_razdels = soup.find(class_='tabsNav d-flex align-items-end').find_all('a')
         for links in link_razdels:
             linkl = 'https://zakupki.gov.ru/' + links.get('href')
             title_razde = links.text.strip()
-            tabs_of_links.append({title_razde:linkl})
+            tabs_of_links[title_razde] = linkl
     return tabs_of_links
 # print(all_link())
 # ##################################################################################
 #Парсинг сведений о закупке
-def main_info_body():
+def main_info_body(soup):
     main_infp = soup.find_all(class_ ='common-text b-bottom pb-3')
     list_info = []
     all_table_info = []
@@ -238,12 +238,12 @@ def main_info_body():
             b = b + 1
         # return data_td
         return new_dict
-print(main_info_body())
+
 # print(main_info_body())
 #############################################################################################
 #Выподающая страница
 ##############################################################################################
-def collapse_element():
+def collapse_element(soup):
     i = 0
     j = 0
     collaps_titles  = []
@@ -343,6 +343,28 @@ def collapse_element():
         return collaps_data
 
 
+def other_info():
+    i = 0
+    HEADERS = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+    for title, link in all_link().items():
+        req = requests.get(url=link, headers=HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+        test = main_info_body(soup)
+        i += 1
+        if i == 3:
+            break
+    return test
+#
+# print(other_info())
+
+def col_sm_12():
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                      ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+
 
 #     print(conteiner_titls_data)
 # collapse_element()
@@ -363,7 +385,7 @@ def Make_Json():
     with open("all_info_test.json", "a", encoding="utf-8") as file:
         json.dump(global_dict, file, indent=4, ensure_ascii=False)
 #######################################################################
-Make_Json()
+# Make_Json()
 
 # print(parse_head())
 # print(main_info_body())
