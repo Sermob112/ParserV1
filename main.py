@@ -360,12 +360,43 @@ def other_info():
 #
 # print(other_info())
 
-def col_sm_12():
+def documents():
+    block_info_title = []
+    infos = []
+    sec_attrib = []
+    sec_value = []
+    data= {}
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                       ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+    link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber=0124200000623001098'
+    req = requests.get(url=link, headers=HEADERS)
+    src = req.text
+    soup = BeautifulSoup(src, "lxml")
+    try:
+        col_sm_12 = soup.find_all(class_ ='col-sm-12 blockInfo')
+        for col in col_sm_12:
+            titles = col.find(class_='blockInfo__title').get_text().strip()
+            block_info_title.append(titles)
+            section_value = col.find_all(class_='section__value docName')
+            for sec in section_value:
+                infos.append(sec.get_text().strip())
+            sec_atrribs = col.find_all(class_ = 'section__attrib')
+            for atr in sec_atrribs:
+                sec_attrib.append(atr.get_text().strip())
+            sec_values = col.find_all(class_= 'section__value')
+            for val in sec_values:
+                sec_value.append(val.get_text().strip())
+            #Дописать эту функциюю
 
 
+    except Exception:
+        pass
+    # return block_info_title
+    return infos
+
+
+print(documents())
 #     print(conteiner_titls_data)
 # collapse_element()
 
