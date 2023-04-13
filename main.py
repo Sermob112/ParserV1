@@ -6,6 +6,7 @@ import locale
 import re
 import pandas as pd
 import json
+import os
 
 
 # URL = {'fz223': 'https://zakupki.gov.ru/223/purchase/public/purchase/info/documents.html',
@@ -365,7 +366,10 @@ def documents():
     infos = []
     sec_attrib = []
     sec_value = []
+    col_data = []
     data= {}
+    files_links = []
+    i = 0
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                       ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
@@ -378,27 +382,63 @@ def documents():
         for col in col_sm_12:
             titles = col.find(class_='blockInfo__title').get_text().strip()
             block_info_title.append(titles)
-            section_value = col.find_all(class_='section__value docName')
-            for sec in section_value:
-                infos.append(sec.get_text().strip())
-            sec_atrribs = col.find_all(class_ = 'section__attrib')
-            for atr in sec_atrribs:
-                sec_attrib.append(atr.get_text().strip())
-            sec_values = col.find_all(class_= 'section__value')
-            for val in sec_values:
-                sec_value.append(val.get_text().strip())
+            try:
+                section_value = col.find_all(class_='section__value docName')
+                for sec in section_value:
+                    infos.append(sec.get_text().strip())
+                # sec_atrribs = col.find_all(class_ = 'section__attrib')
+                # for atr in sec_atrribs:
+                #     sec_attrib.append(atr.get_text().strip())
+                #######################LINKS##########################
+                link_razdels = col.find(class_='blockFilesTabDocs').find_all('a')
+                for links in link_razdels:
+                    linkl = 'https://zakupki.gov.ru/' + links.get('href')
+                    files_links.append(linkl)
+                for url in files_links:
+                    response = requests.get(url)
+                    filename = os.path.basename('url')
+                    with open(filename, "wb") as f:
+                        f.write(response.content)
+                #############################################################
+                sec_values = col.find_all(class_= 'section__value')
+                for val in sec_values:
+                    sec_value.append(val.get_text().strip())
+                #     i= i + 1
+                col_sm = col.find_all(class_ = 'col-sm')
+                for col_12 in col_sm:
+                    col_data.append(col_12.get_text().strip().replace('\n',''))
+                infos.append(sec_value)
+                infos.append(col_data)
+                data[titles] = infos
+                infos = []
+                sec_value = []
+                col_data = []
+
+            except Exception:
+                sec_titl = col.find_all(class_ = 'section__title')
+                for ttl in sec_titl:
+                    col_data.append(ttl.get_text().strip())
+                data[titles] = col_data
+                infos = []
+                sec_value = []
+                col_data = []
+
+
+
             #Дописать эту функциюю
 
 
     except Exception:
         pass
     # return block_info_title
-    return infos
+    return data
 
 
-print(documents())
-#     print(conteiner_titls_data)
-# collapse_element()
+def Test_Json():
+    with open("docs.json", "a", encoding="utf-8") as file:
+        json.dump(documents(), file, indent=4, ensure_ascii=False)
+Test_Json()
+#######################################################################
 
 #############################################
 #!!!!!!!!!!!!!!!!!!!!!!!Добавить conteiner Этого класса!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
