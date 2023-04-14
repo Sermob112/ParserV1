@@ -368,7 +368,7 @@ def documents():
     sec_value = []
     col_data = []
     data= {}
-    files_links = []
+    files_links = {}
     i = 0
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
@@ -382,6 +382,7 @@ def documents():
         for col in col_sm_12:
             titles = col.find(class_='blockInfo__title').get_text().strip()
             block_info_title.append(titles)
+
             try:
                 section_value = col.find_all(class_='section__value docName')
                 for sec in section_value:
@@ -390,15 +391,22 @@ def documents():
                 # for atr in sec_atrribs:
                 #     sec_attrib.append(atr.get_text().strip())
                 #######################LINKS##########################
-                link_razdels = col.find(class_='blockFilesTabDocs').find_all('a')
-                for links in link_razdels:
-                    linkl = 'https://zakupki.gov.ru/' + links.get('href')
-                    files_links.append(linkl)
-                for url in files_links:
-                    response = requests.get(url)
-                    filename = os.path.basename('url')
-                    with open(filename, "wb") as f:
-                        f.write(response.content)
+                link_of_files = col.find_all(class_='blockFilesTabDocs')
+                for lux in link_of_files:
+                    luxit = lux.find_all('a')
+                    for links in luxit:
+                        if 'download' in links.get('href'):
+                            linkl = links.get('href')
+                            titk = links.get('title')
+                            files_links[titk] = linkl
+                    if len(files_links) > 0:
+                        os.makedirs(titles)
+                        for title, url  in files_links.items():
+                            response = requests.get(url, headers=HEADERS)
+                            with open(f'{titles}/{title}', "wb") as f:
+                                f.write(response.content)
+                        files_links = {}
+
                 #############################################################
                 sec_values = col.find_all(class_= 'section__value')
                 for val in sec_values:
