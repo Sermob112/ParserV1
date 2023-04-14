@@ -401,7 +401,7 @@ def documents():
                             files_links[titk] = linkl
                     if len(files_links) > 0:
                         os.makedirs(titles)
-                        for title, url  in files_links.items():
+                        for title, url in files_links.items():
                             response = requests.get(url, headers=HEADERS)
                             with open(f'{titles}/{title}', "wb") as f:
                                 f.write(response.content)
