@@ -282,10 +282,7 @@ def collapse_element(soup = soup):
                     except IndexError:
                         collaps_main.append({'': it.get_text().replace('\n', '').replace('\xa0', ' ')})
                     fgh = fgh +1
-            #     if(block_sec_title != None):
-            #         block_sec_title = item.find(class_='section__title').get_text()
-            #         block_sec_info= item.find(class_='section__info').get_text()
-            #         collaps_main.append({block_sec_title:block_sec_info})
+
                 collaps_data[block_info_title] = collaps_main
                 collaps_main = []
             #####парсинг таблицы
@@ -333,6 +330,7 @@ def collapse_element(soup = soup):
                             try:
                                 conteiner_text.append({th_mass[i]: td_text})
                             except Exception:
+                                i = 0
                                 conteiner_text.append({'': td_text})
                             i += 1
 
@@ -344,24 +342,7 @@ def collapse_element(soup = soup):
         return collaps_data
 
 
-def other_info():
-    i = 0
-    HEADERS = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-    for title, link in all_link().items():
-        req = requests.get(url=link, headers=HEADERS)
-        src = req.text
-        soup = BeautifulSoup(src, "lxml")
-        test = main_info_body(soup)
-        i += 1
-        if i == 3:
-            break
-    return test
-#
-# print(other_info())
-
-def documents():
+def documents(soup):
     block_info_title = []
     infos = []
     sec_attrib = []
@@ -373,10 +354,10 @@ def documents():
     HEADERS = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                       ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-    link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber=0124200000623001098'
-    req = requests.get(url=link, headers=HEADERS)
-    src = req.text
-    soup = BeautifulSoup(src, "lxml")
+    # link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber=0124200000623001098'
+    # req = requests.get(url=link, headers=HEADERS)
+    # src = req.text
+    # soup = BeautifulSoup(src, "lxml")
     try:
         col_sm_12 = soup.find_all(class_ ='col-sm-12 blockInfo')
         for col in col_sm_12:
@@ -387,9 +368,7 @@ def documents():
                 section_value = col.find_all(class_='section__value docName')
                 for sec in section_value:
                     infos.append(sec.get_text().strip())
-                # sec_atrribs = col.find_all(class_ = 'section__attrib')
-                # for atr in sec_atrribs:
-                #     sec_attrib.append(atr.get_text().strip())
+
                 #######################LINKS##########################
                 link_of_files = col.find_all(class_='blockFilesTabDocs')
                 for lux in link_of_files:
@@ -411,7 +390,7 @@ def documents():
                 sec_values = col.find_all(class_= 'section__value')
                 for val in sec_values:
                     sec_value.append(val.get_text().strip())
-                #     i= i + 1
+
                 col_sm = col.find_all(class_ = 'col-sm')
                 for col_12 in col_sm:
                     col_data.append(col_12.get_text().strip().replace('\n',''))
@@ -436,19 +415,19 @@ def documents():
     # return block_info_title
     return data
 
-def journal_of_events():
+def journal_of_events(link):
 
     th_mass = []
-    td_mass = []
     data = []
+    fn_date= {}
     i = 0
-    HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-                      ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-    link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/event-journal.html?regNumber=0124200000623001098'
-    req = requests.get(url=link, headers=HEADERS)
-    src = req.text
-    # soup = BeautifulSoup(src, "lxml")
+    # HEADERS = {
+    #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+    #                   ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+    # link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/event-journal.html?regNumber=0124200000623001098'
+    # req = requests.get(url=link, headers=HEADERS)
+    # src = req.text
+    # # soup = BeautifulSoup(src, "lxml")
     driver = webdriver.Chrome()
     driver.get(link)
     import time
@@ -479,10 +458,32 @@ def journal_of_events():
     return data
 
 # print(journal_of_events())
+def other_info():
+    data = {}
+    i = 0
+    HEADERS = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+    for title, link in all_link().items():
+        req = requests.get(url=link, headers=HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+        try:
+            if len(main_info_body(soup)) > 0:
+                data[title] = main_info_body(soup)
+            elif len(documents(soup)) > 0:
+                data[title] = documents(soup)
+            else:
+                data[title] = journal_of_events(link)
+        except Exception:
+           print(f"Ошибка в этой части {title}")
+
+    return data
+#
 
 def Test_Json():
-    with open("jornal.json", "a", encoding="utf-8") as file:
-        json.dump(journal_of_events(), file, indent=4, ensure_ascii=False)
+    with open("all_docs.json", "a", encoding="utf-8") as file:
+        json.dump(other_info(), file, indent=4, ensure_ascii=False)
 Test_Json()
 #######################################################################
 
