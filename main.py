@@ -7,7 +7,7 @@ import re
 import pandas as pd
 import json
 import os
-
+from selenium import webdriver
 
 # URL = {'fz223': 'https://zakupki.gov.ru/223/purchase/public/purchase/info/documents.html',
 #        'fz44': 'https://zakupki.gov.ru/epz/order/notice/view/documents.html',} # шаблон адреса страницы с документами по закупке
@@ -244,7 +244,7 @@ def main_info_body(soup):
 #############################################################################################
 #Выподающая страница
 ##############################################################################################
-def collapse_element(soup):
+def collapse_element(soup = soup):
     i = 0
     j = 0
     collaps_titles  = []
@@ -431,28 +431,60 @@ def documents():
                 sec_value = []
                 col_data = []
 
-
-
-            #Дописать эту функциюю
-
-
     except Exception:
         pass
     # return block_info_title
     return data
 
+def journal_of_events():
+
+    th_mass = []
+    td_mass = []
+    data = []
+    i = 0
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                      ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+    link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/event-journal.html?regNumber=0124200000623001098'
+    req = requests.get(url=link, headers=HEADERS)
+    src = req.text
+    # soup = BeautifulSoup(src, "lxml")
+    driver = webdriver.Chrome()
+    driver.get(link)
+    import time
+    time.sleep(0)
+    html = driver.page_source
+
+    soup = BeautifulSoup(html, 'lxml')
+
+    driver.quit()
+    wrapper = soup.find_all( class_='table mb-0 displaytagTable')
+    #не нашел журнал событий
+    for tbn in wrapper:
+        c_th = tbn.find_all('th')
+        for th_items in c_th:
+            th_text = th_items.get_text().strip()
+            th_mass.append(th_text)
+
+        c_td = tbn.find_all('td')
+        for td_items in c_td:
+            td_text = td_items.get_text().strip()
+            try:
+                data.append({th_mass[i]: td_text})
+            except Exception:
+                i = 0
+                data.append({th_mass[i]: td_text})
+            i += 1
+
+    return data
+
+# print(journal_of_events())
 
 def Test_Json():
-    with open("docs.json", "a", encoding="utf-8") as file:
-        json.dump(documents(), file, indent=4, ensure_ascii=False)
+    with open("jornal.json", "a", encoding="utf-8") as file:
+        json.dump(journal_of_events(), file, indent=4, ensure_ascii=False)
 Test_Json()
 #######################################################################
-
-#############################################
-#!!!!!!!!!!!!!!!!!!!!!!!Добавить conteiner Этого класса!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
 
 #########################################################################
 #JSON#####
@@ -461,40 +493,9 @@ def Make_Json():
     global_dict.update(parse_head())
     global_dict.update(main_info_body())
     global_dict.update(collapse_element())
+    global_dict.update(documents())
     with open("all_info_test.json", "a", encoding="utf-8") as file:
         json.dump(global_dict, file, indent=4, ensure_ascii=False)
 #######################################################################
 # Make_Json()
 
-# print(parse_head())
-# print(main_info_body())
-# print(collapse_element())
-# for element in data_td:
-#     element = element.split(' ')
-# stringus = 'СварочныйаппаратНеобходимоенапряжениесети380ВСварочныйток'
-# new_set = re.findall('[A-ZА-Я][^A-ZА-Я]*', stringus)
-# print(new_set)
-
-
-
-# data.append({all_table_info:data_td})
-
-# for row in table_tr:
-#     table_td = table.find_all('td')
-#     row_data = [cell.get_text(strip=True) for cell in table_td]
-#     data.append(row_data)
-#
-# with open('output.csv', 'w',  encoding='utf-8') as csvfile:
-#     writer = csv.writer(csvfile)
-#     writer.writerow(list_info)
-#
-# df = pd.DataFrame(new_dict)
-# df.to_excel(f'TEST.xlsx', index=False)
-
-# test = table.find(class_ ='truInfo_126739907')
-# print(test)
-
-# col_9 = soup.find_all(class_='col-9 mr-auto')
-# for values in col_9:
-#     title_text = values.find(class_= 'common-text__title')
-#     value_text = values.find(class_= 'common-text__value')
