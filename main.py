@@ -203,9 +203,7 @@ def main_info_body(soup):
                     if ' ' in value_text:
                         value_text = value_text.replace(' ', '')  # remove non-breaking spaces
                     list_info.append({title_text:value_text})
-            # new_dict[title_cap] = list_info
-            # list_info = []
-            # b = b + 1
+
             table = info.find_all(class_ ='blockInfo__table tableBlock')
             if table != None:
                 for tables in table:
@@ -216,7 +214,7 @@ def main_info_body(soup):
                     for i in hiegth_row:
                         column_name = i.text.strip()
                         all_table_info.append(column_name)
-                        # print(column_name)
+
                     for i in table_td:
                         td = i.get_text().strip()
                         if(td == ''):
@@ -232,7 +230,8 @@ def main_info_body(soup):
                             list_info.append({all_table_info[n]:td})
                         except IndexError:
                             # continue
-                            list_info.append({'': td})
+                            n = 0
+                            list_info.append({all_table_info[n]: td})
                         n = n + 1
             new_dict[title_cap] = list_info
             list_info = []
@@ -421,13 +420,6 @@ def journal_of_events(link):
     data = []
     fn_date= {}
     i = 0
-    # HEADERS = {
-    #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-    #                   ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-    # link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/event-journal.html?regNumber=0124200000623001098'
-    # req = requests.get(url=link, headers=HEADERS)
-    # src = req.text
-    # # soup = BeautifulSoup(src, "lxml")
     driver = webdriver.Chrome()
     driver.get(link)
     import time
