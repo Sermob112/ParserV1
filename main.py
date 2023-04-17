@@ -17,6 +17,7 @@ class mywindow(QtWidgets.QMainWindow):
         par.agent(self.Insert_text.toPlainText())
         par.Make_Json()
 
+
     # def new_win(self):
     #     self.Form = QtWidgets.QWidget()
     #     self.ui.setipUi(self.Form)
