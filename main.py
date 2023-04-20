@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
 soup = 0
 from Parser import *
+
+mass = ['gsfaf', 'fagsafas', 'agsdasgag']
 class mywindow(QtWidgets.QMainWindow):
 
     def __init__(self):
@@ -16,6 +18,9 @@ class mywindow(QtWidgets.QMainWindow):
         par = Parser()
         par.agent(self.Insert_text.toPlainText())
         par.Make_Json()
+        tr = par.status_log()
+        for i in tr:
+            self.textBrowser.append(i)
 
 
     # def new_win(self):

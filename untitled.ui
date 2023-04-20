@@ -55,8 +55,8 @@ font: 14pt &quot;Times New Roman&quot;;
    <widget class="QLabel" name="Log_lab">
     <property name="geometry">
      <rect>
-      <x>230</x>
-      <y>160</y>
+      <x>10</x>
+      <y>270</y>
       <width>301</width>
       <height>121</height>
      </rect>
@@ -82,6 +82,16 @@ font: 14pt &quot;Times New Roman&quot;;
 font: 75 14pt &quot;Times New Roman&quot;;</string>
     </property>
    </widget>
+   <widget class="QTextBrowser" name="textBrowser">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>70</y>
+      <width>281</width>
+      <height>141</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -89,7 +99,7 @@ font: 75 14pt &quot;Times New Roman&quot;;</string>
      <x>0</x>
      <y>0</y>
      <width>717</width>
-     <height>31</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

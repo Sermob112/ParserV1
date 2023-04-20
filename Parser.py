@@ -11,7 +11,7 @@ from selenium import webdriver
 
 class  Parser:
     def __init__(self):
-
+        self.log_data = []
         pass
 
     def agent(self, numer):
@@ -346,6 +346,7 @@ class  Parser:
         sec_value = []
         col_data = []
         data= {}
+        font = []
         files_links = {}
         i = 0
         HEADERS = {
@@ -377,9 +378,9 @@ class  Parser:
                                     titk = links.get('title')
                                     files_links[titk] = linkl
                             if len(files_links) > 0:
-                                if not os.path.exists(self.main_directory):
-                                    path = os.path.join(self.main_directory, titles)
-                                    os.makedirs(path)
+                                # if not os.path.exists(self.main_directory):
+                                path = os.path.join(self.main_directory, titles)
+                                os.makedirs(path)
                                 for title, url in files_links.items():
                                     response = requests.get(url, headers=HEADERS)
                                     with open(f'{self.main_directory}/{titles}/{title}', "wb") as f:
@@ -387,9 +388,9 @@ class  Parser:
                                 files_links = {}
                         except Exception:
                             if len(files_links) > 0:
-                                if not os.path.exists(self.main_directory):
-                                    path = os.path.join(self.main_directory, titles)
-                                    os.makedirs(path)
+                                # if not os.path.exists(self.main_directory):
+                                path = os.path.join(self.main_directory, titles)
+                                os.makedirs(path)
                                 for title, url in files_links.items():
                                     response = requests.get(url, headers=HEADERS)
                                     with open(f'{self.main_directory}/{titles}/{title}', "wb") as f:
@@ -397,35 +398,54 @@ class  Parser:
                                 files_links = {}
 
                     #############################################################
-                    sec_values = col.find_all(class_= 'section__value')
-                    for val in sec_values:
-                        sec_value.append(val.get_text().strip())
-
-                    col_sm = col.find_all(class_ = 'col-sm')
+                    col_sm = col.find_all(class_='col-sm')
                     for col_12 in col_sm:
-                        col_data.append(col_12.get_text().strip().replace('\n',''))
-                    infos.append(sec_value)
-                    infos.append(col_data)
+                        sec_values = col_12.find_all(class_='section__value')
+                        for val in sec_values:
+                            sec_value.append(val.get_text().strip())
+                        sec_attributs = col_12.find_all(class_='section__attrib')
+                        for col_12 in sec_attributs:
+                            try:
+                                sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
+                                i = i + 1
+                            except Exception:
+                                i = 0
+                                sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
+                    front = col.find_all('div', attrs={'style': 'font-size: 14px'})
+                    if len(front) > 0:
+                        for f in front:
+                            font.append(f.get_text().strip())
+
+                    if len(col_sm) == 0:
+                        perm = col.find(class_='section__title').get_text().strip()
+                        # font = []
+                        sec_attrib.append(perm)
+
+                    infos.append(sec_attrib)
+                    infos.append(font)
                     data[titles] = infos
                     infos = []
+                    font = []
                     sec_value = []
-                    col_data = []
+                    sec_attrib = []
 
                 except Exception:
-                    sec_titl = col.find_all(class_ = 'section__title')
-                    for ttl in sec_titl:
-                        col_data.append(ttl.get_text().strip())
-                    data[titles] = col_data
-                    infos = []
-                    sec_value = []
-                    col_data = []
+                    pass
+                    # sec_titl = col.find_all(class_ = 'section__title')
+                    # for ttl in sec_titl:
+                    #     col_data.append(ttl.get_text().strip())
+                    # data[titles] = col_data
+                    # infos = []
+                    # sec_value = []
+                    # col_data = []
 
             self.status = 'успешный парсинг Документов'
-            return data
+
         except Exception:
             self.status = 'Ошибка парсинга Документов'
-            pass
+
         # return block_info_title
+        return data
 
 
     def journal_of_events(self,link):
@@ -517,19 +537,19 @@ class  Parser:
 
     #########################################################################
     #JSON#####
-    def status_agent(self):
-        # return self.status
-        print(self.status)
+    def status_log(self):
+         self.log_data.append(self.status)
+         return self.log_data
     def Make_Json(self):
         global_dict = {}
         global_dict.update(self.parse_head())
-        self.status_agent()
+        self.status_log()
         global_dict.update(self.main_info_body(self.soup))
-        self.status_agent()
+        self.status_log()
         global_dict.update(self.collapse_element(self.soup))
-        self.status_agent()
+        self.status_log()
         global_dict.update(self.other_info())
-        self.status_agent()
+        self.status_log()
         # global_dict.update(self.documents(self.soup))
         try:
             with open(f"{self.main_directory}/all_info_test.json", "a", encoding="utf-8") as file:
@@ -537,6 +557,6 @@ class  Parser:
             self.status = 'Успешная запись файлов'
         except Exception:
             self.status = 'Ошибка записи файлов'
-        self.status_agent()
+        self.status_log()
 
     #######################################################################
