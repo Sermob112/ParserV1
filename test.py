@@ -1,3 +1,5 @@
+from typing import List, Dict, Any
+
 from bs4 import BeautifulSoup
 import requests
 import urllib3
@@ -19,96 +21,155 @@ link = 'https://zakupki.gov.ru/epz/order/notice/ok20/view/supplier-results.html?
 req = requests.get(url=link, headers=HEADERS)
 src = req.text
 soup = BeautifulSoup(src, "lxml")
-def main_info_body(soup = soup):
+def supplier_result():
     block_title = []
     title_data= []
     value_data = []
     list_info= []
+    zakazchic_data= []
+    table_titles = []
     all_table_info = []
-    data_td = []
-    new_dict = {}
+    doc_titles = []
+    data = {}
     i = 0
     n = 0
-    row_info = soup.find_all(class_= 'row blockInfo')
-    for info in row_info:
-        title_cap = info.find(class_='blockInfo__title').get_text().strip()
-        block_title.append(title_cap)
-        col_9 = info.find_all(class_='blockInfo__section')
-        for col in col_9:
+    # row_info = soup.find_all(class_= 'row blockInfo')
+    # for info in row_info:
+    driver = webdriver.Chrome()
+    driver.get(link)
+    import time
+    time.sleep(0)
+    html = driver.page_source
+
+    soup = BeautifulSoup(html, 'lxml')
+
+    driver.quit()
+
+    col_9 = soup.find_all(class_='row blockInfo')
+
+    for col in col_9:
+        title_cap = col.find(class_='blockInfo__title').get_text().strip()
+
+
+            # td_text = info.find('td',class_='tableBlock__col').get_text().strip()
+            #
+            # value_text = 'None'
+            # title_text = 'None'
+
+        block_section = col.find_all('section', class_="blockInfo__section section")
+        for inf in block_section:
+            title_text = inf.find(class_='section__title').get_text().strip()
             try:
-                td_text = info.find('td',class_='tableBlock__col').get_text().strip()
-            except Exception:
-                value_text = 'None'
-                title_text = 'None'
-            block_section = info.find_all('section', class_="blockInfo__section section")
-            for inf in block_section:
-                try:
-                    title_text = inf.find_all(class_='section__title')
-                    for tit in title_text:
-                        title_data.append(tit.get_text().strip())
-                    title_value = inf.find_all(class_='section__info')
-                    for val in title_value:
-                        value_data.append(val.get_text().strip())
-                except Exception:
-                    value_text = 'None'
-                    title_texts = 'None'
-                table = info.find_all(class_='blockInfo__table tableBlock')
-                if table != None:
-                    for tables in table:
-                        # table = info.find(class_='blockInfo__table tableBlock')
-                        hiegth_row = tables.find_all('th')
-                        table_td = tables.find_all('td')
+                title_value = inf.find(class_='section__info').get_text().strip()
+                value_data.append({title_text: title_value})
+            except  Exception:
+                value_data.append({title_text: ''})
+        ##Заказчик(и), с которыми планируется заключить контракт
+        try:
+            th = col.find('th', class_="tableBlock__col tableBlock__col_header").get_text().strip()
+            td = col.find('td', class_='tableBlock__col').get_text().strip()
+            zakazchic_data.append({th: td})
+            zac = zakazchic_data[0]
 
-                        for i in hiegth_row:
-                            column_name = i.text.strip()
-                            all_table_info.append(column_name)
+        except Exception:
+            None
 
-                        for i in table_td:
-                            td = i.get_text().strip()
-                            if (td == ''):
-                                continue
-                            if '\n' in td:
-                                td = td.replace('\n', '')  # remove non-breaking spaces
-                                td = re.findall('[A-ZА-Я][^A-ZА-Я]*', td)
-                            if '\xa0' in td:
-                                td = td.replace('\xa0', '').replace(',', '.')  # remove non-breaking spaces
 
-                            data_td.append(td)
+    #Таблица если есть
+        # elements = soup.find_all('div', class_='blockInfo__table tableBlock')
+        # second_element = elements[1]  # выбираем второй элемент (индекс 1)
+        try:
+            table_sup = col.find_all(class_ = 'blockInfo__table tableBlock')
+            if len(table_sup) > 1:
+                second_element = table_sup[1]
+                table_tr = second_element.find_all(class_= 'tableBlock__col tableBlock__col_header')
+                for th in table_tr:
+                    table_titles.append(th.get_text().strip())
+                table_td = second_element.find_all(class_='tableBlock__body')
+                for row in table_td:
+                    try:
+                        table_td_row = row.find_all(class_='tableBlock__col')
+                        for th in table_td_row:
                             try:
-                                list_info.append({all_table_info[n]: td})
-                            except IndexError:
-                                # continue
-
-                                list_info.append({all_table_info[n]: td})
+                                all_table_info.append({table_titles[n].replace('\n', '').replace(' ', ''):th.get_text().strip().replace('\n', '').replace(' ', '')})
+                            except Exception:
+                                n = 0
+                                all_table_info.append({table_titles[n].replace('\n', '').replace(' ', ''): th.get_text().strip().replace('\n', '').replace(' ', '')})
                             n = n + 1
-                new_dict[title_cap] = list_info
-                list_info = []
+                    except Exception:
+                        None
+                value_data.append(all_table_info)
+                all_table_info = []
 
-                    # list_info.append({title_text: values_texts})
-        my_set = set(title_data)
-        new_list = list(my_set)
-        sorted(new_list)
-    # my_set = set(titi_text)
-    # new_list = list(my_set)
-    #
-    # for j in new_list:
-    #     try:
-    #         list_info.append({j: value_text[i]})
-    #     except Exception:
-    #         list_info.append({j: "None"})
-    #     i = + 1
+            #Дальнейшие таблицы
+            else:
+                table_tr = col.find_all(class_='tableBlock__col tableBlock__col_header')
+                for th in table_tr:
+                    table_titles.append(th.get_text().strip())
+                table_td = col.find_all(class_='tableBlock__body')
+                for row in table_td:
+                    try:
+                        table_td_row = row.find_all(class_='tableBlock__col')
+                        for th in table_td_row:
+                            try:
+                                all_table_info.append({table_titles[n].replace('\n', '').replace(' ', ''): th.get_text().strip().replace('\n', '').replace(' ', '')})
+                            except Exception:
+                                n = 0
+                                all_table_info.append({table_titles[n].replace('\n', '').replace(' ', ''): th.get_text().strip().replace('\n', '').replace(' ', '')})
+                            n = n + 1
+                    except Exception:
+                        None
+                value_data.append(all_table_info)
+                all_table_info = []
 
-        # list_info.append({title_text: value_text})
+
+                #Выпдающая таблица, нужно найти способ вытягивать динамические данные, старый способ не работает
+                # try:
+                #     # docs = soup.find_all(class_='tableBlock__col tableBlock__row')
+                #     docs = soup.find_all(id='tdraftDocsSearchResult10182822')
+                #     for doc in docs:
+                #         table_tr = doc.find_all(class_='tableBlock__col tableBlock__col_header')
+                #         for th in table_tr:
+                #             table_titles.append(th.get_text().strip())
+                #         table_td = doc.find_all(class_='tableBlock__body')
+                #         for row in table_td:
+                #             try:
+                #                 table_td_row = row.find_all(class_='tableBlock__col')
+                #                 for th in table_td_row:
+                #                     try:
+                #                         all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                #                                                                                          ''): th.get_text().strip().replace(
+                #                             '\n', '').replace(' ', '')})
+                #                     except Exception:
+                #                         n = 0
+                #                         all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                #                                                                                          ''): th.get_text().strip().replace(
+                #                             '\n', '').replace(' ', '')})
+                #                     n = n + 1
+                #             except Exception:
+                #                 None
+                #
+                #     title_doc = docs.find_all(class_='tableBlock__col tableBlock__row')
+                #     for tit in title_doc:
+                #         doc_titles.append(tit.get_text())
 
 
+                # except Exception:
+                #     None
 
-
-
-    return new_dict
-
-
+        except Exception:
+                    None
+        value_data.append(zac)
+        # value_data.append(all_table_info)
+        data[title_cap] = value_data
+        value_data = []
+        zac = []
+        zakazchic_data = []
+    return data
+#
+# print(supplier_result())
 
 def Test_Json():
     with open("for_test.json", "a", encoding="utf-8") as file:
-        json.dump(main_info_body(), file, indent=4, ensure_ascii=False)
+        json.dump(supplier_result(), file, indent=4, ensure_ascii=False)
 Test_Json()

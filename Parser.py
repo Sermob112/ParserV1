@@ -106,7 +106,7 @@ class  Parser:
                 # result.append({key: value})
                 mass.append({key: value})
                 serial_date['Номер заказа'] = mass
-            self.status = 'Заголовок расперсился успешно'
+            self.status = 'Успешный парсинг заголовка'
             return serial_date
         except Exception:
                 self.status = 'Произошла ошибка с парсингом заголовка'
