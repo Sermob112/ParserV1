@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>717</width>
-    <height>401</height>
+    <width>895</width>
+    <height>539</height>
    </rect>
   </property>
   <property name="font">
@@ -22,8 +22,8 @@
    <widget class="QPushButton" name="Parse_but">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>190</y>
+      <x>20</x>
+      <y>140</y>
       <width>171</width>
       <height>61</height>
      </rect>
@@ -52,22 +52,6 @@ font: 14pt &quot;Times New Roman&quot;;
      <string>Введите номер закупки</string>
     </property>
    </widget>
-   <widget class="QLabel" name="Log_lab">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>270</y>
-      <width>301</width>
-      <height>121</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(2, 255, 255);</string>
-    </property>
-    <property name="text">
-     <string>Лог</string>
-    </property>
-   </widget>
    <widget class="QTextEdit" name="Insert_text">
     <property name="geometry">
      <rect>
@@ -85,11 +69,24 @@ font: 75 14pt &quot;Times New Roman&quot;;</string>
    <widget class="QTextBrowser" name="textBrowser">
     <property name="geometry">
      <rect>
-      <x>380</x>
-      <y>70</y>
-      <width>281</width>
-      <height>141</height>
+      <x>410</x>
+      <y>110</y>
+      <width>321</width>
+      <height>281</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>70</y>
+      <width>191</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Лог</string>
     </property>
    </widget>
   </widget>
@@ -98,7 +95,7 @@ font: 75 14pt &quot;Times New Roman&quot;;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>717</width>
+     <width>895</width>
      <height>21</height>
     </rect>
    </property>

@@ -487,6 +487,120 @@ class  Parser:
         except Exception:
             self.status = 'Ошибка парснига  Журнала'
 
+    def supplier_result(self, link):
+        block_title = []
+        title_data = []
+        value_data = []
+        list_info = []
+        zakazchic_data = []
+        table_titles = []
+        all_table_info = []
+        doc_titles = []
+        data = {}
+        i = 0
+        n = 0
+        # row_info = soup.find_all(class_= 'row blockInfo')
+        # for info in row_info:
+        driver = webdriver.Chrome()
+        driver.get(link)
+        import time
+        time.sleep(0)
+        html = driver.page_source
+
+        soup = BeautifulSoup(html, 'lxml')
+
+        driver.quit()
+
+        col_9 = soup.find_all(class_='row blockInfo')
+
+        for col in col_9:
+            title_cap = col.find(class_='blockInfo__title').get_text().strip()
+
+            # td_text = info.find('td',class_='tableBlock__col').get_text().strip()
+            #
+            # value_text = 'None'
+            # title_text = 'None'
+
+            block_section = col.find_all('section', class_="blockInfo__section section")
+            for inf in block_section:
+                title_text = inf.find(class_='section__title').get_text().strip()
+                try:
+                    title_value = inf.find(class_='section__info').get_text().strip()
+                    value_data.append({title_text: title_value})
+                except  Exception:
+                    value_data.append({title_text: ''})
+            ##Заказчик(и), с которыми планируется заключить контракт
+            try:
+                th = col.find('th', class_="tableBlock__col tableBlock__col_header").get_text().strip()
+                td = col.find('td', class_='tableBlock__col').get_text().strip()
+                zakazchic_data.append({th: td})
+                zac = zakazchic_data[0]
+
+            except Exception:
+                None
+
+            try:
+                table_sup = col.find_all(class_='blockInfo__table tableBlock')
+                if len(table_sup) > 1:
+                    second_element = table_sup[1]
+                    table_tr = second_element.find_all(class_='tableBlock__col tableBlock__col_header')
+                    for th in table_tr:
+                        table_titles.append(th.get_text().strip())
+                    table_td = second_element.find_all(class_='tableBlock__body')
+                    for row in table_td:
+                        try:
+                            table_td_row = row.find_all(class_='tableBlock__col')
+                            for th in table_td_row:
+                                try:
+                                    all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                                                                                                     ''): th.get_text().strip().replace(
+                                        '\n', '').replace(' ', '')})
+                                except Exception:
+                                    n = 0
+                                    all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                                                                                                     ''): th.get_text().strip().replace(
+                                        '\n', '').replace(' ', '')})
+                                n = n + 1
+                        except Exception:
+                            None
+                    value_data.append(all_table_info)
+                    all_table_info = []
+
+                # Дальнейшие таблицы
+                else:
+                    table_tr = col.find_all(class_='tableBlock__col tableBlock__col_header')
+                    for th in table_tr:
+                        table_titles.append(th.get_text().strip())
+                    table_td = col.find_all(class_='tableBlock__body')
+                    for row in table_td:
+                        try:
+                            table_td_row = row.find_all(class_='tableBlock__col')
+                            for th in table_td_row:
+                                try:
+                                    all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                                                                                                     ''): th.get_text().strip().replace(
+                                        '\n', '').replace(' ', '')})
+                                except Exception:
+                                    n = 0
+                                    all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
+                                                                                                     ''): th.get_text().strip().replace(
+                                        '\n', '').replace(' ', '')})
+                                n = n + 1
+                        except Exception:
+                            None
+                    value_data.append(all_table_info)
+                    all_table_info = []
+
+
+            except Exception:
+                None
+            value_data.append(zac)
+            # value_data.append(all_table_info)
+            data[title_cap] = value_data
+            value_data = []
+            zac = []
+            zakazchic_data = []
+        return data
 
     # print(journal_of_events())
     def other_info(self):
@@ -518,6 +632,8 @@ class  Parser:
                     data[title] = self.main_info_body(soup)
                 elif title == 'Документы':
                     data[title] = self.documents(soup)
+                elif title == 'Результаты определения поставщика (подрядчика, исполнителя)':
+                    data[title] = self.supplier_result(link)
                 # elif len(self.journal_of_events(link))> 0:
                 elif title == 'Журнал событий':
                     data[title] = self.journal_of_events(link)

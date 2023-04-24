@@ -123,40 +123,6 @@ def supplier_result():
                 all_table_info = []
 
 
-                #Выпдающая таблица, нужно найти способ вытягивать динамические данные, старый способ не работает
-                # try:
-                #     # docs = soup.find_all(class_='tableBlock__col tableBlock__row')
-                #     docs = soup.find_all(id='tdraftDocsSearchResult10182822')
-                #     for doc in docs:
-                #         table_tr = doc.find_all(class_='tableBlock__col tableBlock__col_header')
-                #         for th in table_tr:
-                #             table_titles.append(th.get_text().strip())
-                #         table_td = doc.find_all(class_='tableBlock__body')
-                #         for row in table_td:
-                #             try:
-                #                 table_td_row = row.find_all(class_='tableBlock__col')
-                #                 for th in table_td_row:
-                #                     try:
-                #                         all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
-                #                                                                                          ''): th.get_text().strip().replace(
-                #                             '\n', '').replace(' ', '')})
-                #                     except Exception:
-                #                         n = 0
-                #                         all_table_info.append({table_titles[n].replace('\n', '').replace(' ',
-                #                                                                                          ''): th.get_text().strip().replace(
-                #                             '\n', '').replace(' ', '')})
-                #                     n = n + 1
-                #             except Exception:
-                #                 None
-                #
-                #     title_doc = docs.find_all(class_='tableBlock__col tableBlock__row')
-                #     for tit in title_doc:
-                #         doc_titles.append(tit.get_text())
-
-
-                # except Exception:
-                #     None
-
         except Exception:
                     None
         value_data.append(zac)
