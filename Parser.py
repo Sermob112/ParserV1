@@ -15,6 +15,7 @@ class  Parser:
         pass
 
     def agent(self, numer):
+        self.num = numer
         try:
             test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
             HEADERS_test = {
@@ -668,7 +669,7 @@ class  Parser:
         self.status_log()
         # global_dict.update(self.documents(self.soup))
         try:
-            with open(f"{self.main_directory}/all_info_test.json", "a", encoding="utf-8") as file:
+            with open(f"{self.main_directory}/Все данные закупки №{self.num}.json", "a", encoding="utf-8") as file:
                 json.dump(global_dict, file, indent=4, ensure_ascii=False)
             self.status = 'Успешная запись файлов'
         except Exception:
