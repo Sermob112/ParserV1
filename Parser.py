@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import locale
 import re
-import pandas as pd
+
 import json
 import os
 from selenium import webdriver
