@@ -364,6 +364,8 @@ class  Parser:
                 block_info_title.append(titles)
 
                 try:
+
+
                     section_value = col.find_all(class_='section__value docName')
                     for sec in section_value:
                         infos.append(sec.get_text().strip())
@@ -379,9 +381,11 @@ class  Parser:
                                     titk = links.get('title')
                                     files_links[titk] = linkl
                             if len(files_links) > 0:
-                                # if not os.path.exists(self.main_directory):
-                                path = os.path.join(self.main_directory, titles)
-                                os.makedirs(path)
+                                try:
+                                    path = os.path.join(self.main_directory, titles)
+                                    os.makedirs(path)
+                                except Exception:
+                                    pass
                                 for title, url in files_links.items():
                                     response = requests.get(url, headers=HEADERS)
                                     with open(f'{self.main_directory}/{titles}/{title}', "wb") as f:
