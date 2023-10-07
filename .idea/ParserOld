@@ -173,11 +173,33 @@ class  ParserOLd:
         mainMass= self.mainInfo()
         doc = Document()
         data = headMass + mainMass
+        structured_data = {}
+
+        # Проходим по данным с шагом 2 (чтобы использовать каждый второй элемент как ключ, а следующий - как значение)
+        for i in range(0, len(data) - 1, 2):
+            key = data[i]
+            value = data[i + 1]
+            structured_data[key] = value
+
+        # Последний элемент (если он есть) остается неструктурированным
+        if len(data) % 2 != 0:
+            unstructured_data = data[-1]
+
+        doc.add_heading('Данные о закупке', level=1)
+
+        # Добавляем структурированные данные
+        for key, value in structured_data.items():
+            doc.add_paragraph(f'{key}: {value}')
+
+        # Добавляем раздел для неструктурированных данных
+        doc.add_heading('Неструктурированные данные', level=2)
+        doc.add_paragraph(unstructured_data)
 
         # Добавляем каждый элемент массива данных в документ
-        for item in data:
-            doc.add_paragraph(item)
+        # for item in data:
+        #     doc.add_paragraph(item)
         doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+        # return data
 
         
 
@@ -187,7 +209,7 @@ class  ParserOLd:
 
 par = ParserOLd()
 par.agent('5963715')
-par.makeDoc()
+print(par.makeDoc())
 
 # par.parse_head()
 # print(par.get_links())
