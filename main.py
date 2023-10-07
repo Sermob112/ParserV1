@@ -5,7 +5,7 @@ import sys
 soup = 0
 from Parser import *
 
-mass = ['5963715']
+mass = ['0373100119621000003']
 class mywindow(QtWidgets.QMainWindow):
 
     def __init__(self):
@@ -19,7 +19,8 @@ class mywindow(QtWidgets.QMainWindow):
         for i in mass:
             try:
                 par.agent(i)
-                par.Make_Json()
+                # par.Make_Json()
+                par.Make_Dock()
                 tr = par.status_log()
             except Exception as e:
                 self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")

@@ -8,7 +8,7 @@ import re
 import json
 import os
 from selenium import webdriver
-
+from docx import Document
 class  Parser:
     def __init__(self):
         self.log_data = []
@@ -23,7 +23,7 @@ class  Parser:
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                               ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
 
-            req = requests.get(test_url2, headers=HEADERS_test, params=None)
+            req = requests.get(test_url3, headers=HEADERS_test, params=None)
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
@@ -682,4 +682,47 @@ class  Parser:
             self.status = 'Ошибка записи файлов'
         self.status_log()
 
+    def Make_Dock(self):
+        global_dict = {}
+        global_dict.update(self.parse_head())
+        self.status_log()
+        global_dict.update(self.main_info_body(self.soup))
+        self.status_log()
+        global_dict.update(self.collapse_element(self.soup))
+        self.status_log()
+        global_dict.update(self.other_info())
+        self.status_log()
+        # global_dict.update(self.documents(self.soup))
+        try:
+            doc = Document()
+            # for item in global_dict:
+            #     doc.add_paragraph(item)
+            # doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+            # Добавляем заголовок
+            doc.add_heading('Данные о закупке', level=1)
+
+# Перебираем данные и добавляем их в документ
+            for key, value in global_dict.items():
+                doc.add_heading(key, level=2)
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            for sub_key, sub_value in item.items():
+                                doc.add_paragraph(f'{sub_key}: {sub_value}')
+                        else:
+                            doc.add_paragraph(str(item))
+                else:
+                    doc.add_paragraph(str(value))
+            doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+            self.status = 'Успешная запись файлов'
+        except Exception:
+            self.status = 'Ошибка записи файлов'
+        self.status_log()
+        return global_dict
+
+
     #######################################################################
+# par = Parser()
+# par.agent('0373100119621000003')
+#                 # par.Make_Json()
+# par.Make_Dock()

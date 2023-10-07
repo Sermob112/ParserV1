@@ -8,6 +8,7 @@ import re
 import json
 import os
 from selenium import webdriver
+from docx import Document
 
 class  ParserOLd:
     def __init__(self):
@@ -40,6 +41,8 @@ class  ParserOLd:
         mass = []
         serial_date = {}
         source = self.soup.find(class_="col-6 pr-0 mr-21px")
+        reg_num = self.soup.find(class_='registry-entry__header-mid__number').get_text().strip()
+        self.main_directory = 'Закупка ' + str(reg_num)
         lines = source.get_text().strip().splitlines()
         # Удалите пустые строки
         mainMass = [line.strip() for line in lines if line.strip()]
@@ -47,7 +50,9 @@ class  ParserOLd:
         lines = sourceleft.get_text().strip().splitlines()
         leftMass = [line.strip() for line in lines if line.strip()]
         cleaned_left = [item.replace('\xa0', ' ') for item in leftMass]
+
         return  mainMass+cleaned_left
+        # return self.main_directory
     
     def get_links(self):
         tabs_of_links = {}
@@ -79,6 +84,8 @@ class  ParserOLd:
             soup = BeautifulSoup(src, "lxml")
             if title == 'Журнал событий':
                 JornalMass = self.get_jornals(link)
+            if title == 'Документы':
+                JornalMass = self.get_documents(link)
             try:
                 
                 containerMain = soup.find_all(class_='card-common-content')
@@ -88,13 +95,17 @@ class  ParserOLd:
                     for i in containerMain:
                         lines = i.get_text().strip().splitlines()
                         Mass = [line.strip() for line in lines if line.strip()]
-                        mainMass =  mainMass + Mass
+                        cleaned_Mass = [item.replace('\xa0', ' ') for item in Mass]
+                        mainMass =  mainMass + cleaned_Mass
                 
                 if containerMain2 != None:
                     for i in containerMain2:
                         lines = i.get_text().strip().splitlines()
                         Mass = [line.strip() for line in lines if line.strip()]
-                        newmainMass =  newmainMass + Mass
+                        cleaned_Mass = [item.replace('\xa0', ' ') for item in Mass]
+                        mainMass =  mainMass + cleaned_Mass
+                        newmainMass =  newmainMass + cleaned_Mass
+                
             except:
                 print('Error')
         mainMass.append(newmainMass)
@@ -117,10 +128,69 @@ class  ParserOLd:
                 Mass = [line.strip() for line in lines if line.strip()]
                 JornalMass = JornalMass + Mass
         return JornalMass
+    
+    def get_documents(self, link):
+        titlesMass = []
+        linkMass = []
+        req = requests.get(link, headers=self.HEADERS, params=None)
+        src = req.text
+        soup = BeautifulSoup(src, 'lxml')
+        findTitle = soup.find_all(class_='container card-attachments-container')
+        for titles in findTitle:
+            title = titles.find(class_='title')
+            if title:
+                title_text = title.get_text().strip()
+                values = titles.find_all(class_='col-6 b-left')
+                for laxir in values:
+                    luxit = laxir.find_all('a')
+                    try:
+                        for links in luxit:
+                            href = links.get('href')
+                            if href and 'download/download.html?id' in href:
+                                linkl = href
+                                tooltip_value = links.get('data-tooltip')
+                                tooltip_soup = BeautifulSoup(tooltip_value, 'html.parser')
+                                span_element = tooltip_soup.find('span')
+                                if span_element:
+                                    text = span_element.get_text(strip=True)
+                                    # linkMass.append(linkl)
+                                    response = requests.get(f'https://zakupki.gov.ru{linkl}', headers=self.HEADERS)
+                                    if response.status_code == 200:
+                                        # path = os.path.join(self.main_directory, text)
+                                        # os.makedirs(path)
+                                        # Создаем каталог для сохранения файлов, если его нет
+                                        os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)
+                                        # Сохраняем файл в указанный каталог
+                                        with open(f'{self.main_directory}/{title_text}/{text}', "wb") as f:
+                                            f.write(response.content)
+                                    else:
+                                        print(f"Не удалось скачать файл: {linkl}")
+                    except Exception as e:
+                        print(f"Произошла ошибка: {str(e)}")
+
+    def makeDoc(self):
+        headMass = self.parse_head()
+        mainMass= self.mainInfo()
+        doc = Document()
+        data = headMass + mainMass
+
+        # Добавляем каждый элемент массива данных в документ
+        for item in data:
+            doc.add_paragraph(item)
+        doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+
+        
+
+
+
+
 
 par = ParserOLd()
 par.agent('5963715')
-# print(par.parse_head())
+par.makeDoc()
+
+# par.parse_head()
 # print(par.get_links())
 # print(par.mainInfo())
-print(par.get_jornals('https://zakupki.gov.ru/epz/order/notice/notice223/event-journal.html?noticeInfoId=5963715'))
+# print(par.get_jornals('https://zakupki.gov.ru/epz/order/notice/notice223/event-journal.html?noticeInfoId=5963715'))
+# print(par.get_documents('https://zakupki.gov.ru/epz/order/notice/notice223/documents.html?noticeInfoId=12821871'))
