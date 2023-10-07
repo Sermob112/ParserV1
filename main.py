@@ -5,7 +5,7 @@ import sys
 soup = 0
 from Parser import *
 
-mass = ['gsfaf', 'fagsafas', 'agsdasgag']
+mass = ['0373100119621000005', '0373100112518000004', '0373100119621000004']
 class mywindow(QtWidgets.QMainWindow):
 
     def __init__(self):
@@ -16,11 +16,16 @@ class mywindow(QtWidgets.QMainWindow):
         # self.new_win_but.clicked.connect(self.new_win)
     def test(self):
         par = Parser()
-        par.agent(self.Insert_text.toPlainText())
-        par.Make_Json()
-        tr = par.status_log()
-        for i in tr:
-            self.textBrowser.append(i)
+        for i in mass:
+            try:
+                par.agent(i)
+                par.Make_Json()
+                tr = par.status_log()
+            except Exception as e:
+                self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")
+            else:
+                continue
+       
 
 
     # def new_win(self):
