@@ -18,11 +18,12 @@ class  Parser:
         self.num = numer
         try:
             test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
+            test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
             HEADERS_test = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                               ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
 
-            req = requests.get(test_url3, headers=HEADERS_test, params=None)
+            req = requests.get(test_url2, headers=HEADERS_test, params=None)
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
@@ -127,7 +128,8 @@ class  Parser:
                 for links in link_razdels:
                     linkl = 'https://zakupki.gov.ru/' + links.get('href')
                     title_razde = links.text.strip()
-                    tabs_of_links.append({title_razde:linkl})
+                    tabs_of_links[title_razde] = linkl
+                    # tabs_of_links.append({title_razde:linkl})
             except Exception:
                 link_razdels = self.soup.find(class_='tabsNav d-flex align-items-end').find_all('a')
                 for links in link_razdels:

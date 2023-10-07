@@ -5,7 +5,7 @@ import sys
 soup = 0
 from Parser import *
 
-mass = ['0373100119621000005', '0373100112518000004', '0373100119621000004']
+mass = ['5963715']
 class mywindow(QtWidgets.QMainWindow):
 
     def __init__(self):

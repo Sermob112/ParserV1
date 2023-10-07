@@ -114,16 +114,20 @@ def journal_of_events():
 def agent(numer):
     num = numer
     try:
-        test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
+        search_url = f'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString={numer}&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1'
+        # test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
         HEADERS_test = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                             ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-
-        req = requests.get(test_url3, headers=HEADERS_test, params=None)
+        req = requests.get(search_url, headers=HEADERS_test, params=None)
         src = req.text
         soup = BeautifulSoup(src, 'lxml')
         status = 'Успешное подключение'
-        return soup
+        col = soup.find('div', class_ = 'registry-entry__header-mid__number')
+        a_tag = col.find('a')
+        match = re.search(r'noticeInfoId=(\d+)', a_tag['href'])
+        number = match.group(1)
+        return  number
     except:
         status = 'Ошибка подключения'
-print(agent('01'))
+print(agent('31704961137'))
