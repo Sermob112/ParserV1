@@ -14,7 +14,8 @@ class  ParserOld:
     def __init__(self):
         pass
 
-    def makeLinkNum(self, numer):
+    def makeLinkNum(self, numer,filePath):
+        self.filePath = filePath
     # num = numer
         try:
             search_url = f'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString={numer}&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1'
@@ -184,9 +185,9 @@ class  ParserOld:
                                         # path = os.path.join(self.main_directory, text)
                                         # os.makedirs(path)
                                         # Создаем каталог для сохранения файлов, если его нет
-                                        os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)
+                                        os.makedirs(f'{self.filePath}/{self.main_directory}/{title_text}', exist_ok=True)
                                         # Сохраняем файл в указанный каталог
-                                        with open(f'{self.main_directory}/{title_text}/{text}', "wb") as f:
+                                        with open(f'{self.filePath}/{self.main_directory}/{title_text}/{text}', "wb") as f:
                                             f.write(response.content)
                                     else:
                                         print(f"Не удалось скачать файл: {linkl}")
@@ -222,7 +223,7 @@ class  ParserOld:
         # Добавляем каждый элемент массива данных в документ
         for item in data:
             doc.add_paragraph(item)
-        doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+        doc.save(f"{self.filePath}/{self.main_directory}/Все данные о закупке №{self.num}.docx")
         # return data
 
         
@@ -231,9 +232,9 @@ class  ParserOld:
 
 
 
-par = ParserOld()
-par.makeLinkNum('31704765959')
-par.makeDoc()
+# par = ParserOld()
+# par.makeLinkNum('31704765959')
+# par.makeDoc()
 
 # par.parse_head()
 # print(par.get_links())

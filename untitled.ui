@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>895</width>
-    <height>539</height>
+    <width>760</width>
+    <height>657</height>
    </rect>
   </property>
   <property name="font">
@@ -22,21 +22,24 @@
    <widget class="QPushButton" name="Parse_but">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>140</y>
+      <x>30</x>
+      <y>240</y>
       <width>171</width>
       <height>61</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">font: 14pt &quot;Impact&quot;;</string>
+    </property>
     <property name="text">
-     <string>Parse</string>
+     <string>Парсить</string>
     </property>
    </widget>
    <widget class="QLabel" name="Lab">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
+      <x>30</x>
+      <y>440</y>
       <width>331</width>
       <height>51</height>
      </rect>
@@ -55,8 +58,8 @@ font: 14pt &quot;Times New Roman&quot;;
    <widget class="QTextEdit" name="Insert_text">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>70</y>
+      <x>30</x>
+      <y>500</y>
       <width>331</width>
       <height>51</height>
      </rect>
@@ -69,24 +72,88 @@ font: 75 14pt &quot;Times New Roman&quot;;</string>
    <widget class="QTextBrowser" name="textBrowser">
     <property name="geometry">
      <rect>
-      <x>410</x>
-      <y>110</y>
-      <width>321</width>
+      <x>440</x>
+      <y>270</y>
+      <width>291</width>
       <height>281</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 10pt &quot;Impact&quot;;</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>410</x>
-      <y>70</y>
-      <width>191</width>
-      <height>21</height>
+      <x>450</x>
+      <y>230</y>
+      <width>31</width>
+      <height>31</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 14pt &quot;Impact&quot;;</string>
     </property>
     <property name="text">
      <string>Лог</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="FilePathIn">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>70</y>
+      <width>581</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 12pt &quot;Impact&quot;;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="InputFileBut">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 12pt &quot;Impact&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Выбрать файл</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="OutPutFileBut">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>130</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 12pt &quot;Impact&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Выгрузить в</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="FilePathOut">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>150</y>
+      <width>581</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 12pt &quot;Impact&quot;;</string>
     </property>
    </widget>
   </widget>
@@ -95,7 +162,7 @@ font: 75 14pt &quot;Times New Roman&quot;;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>895</width>
+     <width>760</width>
      <height>21</height>
     </rect>
    </property>

@@ -14,8 +14,9 @@ class  Parser:
         self.log_data = []
         pass
 
-    def agent(self, numer):
+    def agent(self, numer, filePath):
         self.num = numer
+        self.filePath = filePath
         try:
             test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
             test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
@@ -384,23 +385,25 @@ class  Parser:
                                     files_links[titk] = linkl
                             if len(files_links) > 0:
                                 try:
-                                    path = os.path.join(self.main_directory, titles)
-                                    os.makedirs(path)
+                                    # path = os.path.join(self.main_directory, titles)
+                                    os.makedirs(f'{self.filePath}/{self.main_directory}/{titles}', exist_ok=True)
+                                    # os.makedirs(path)
                                 except Exception:
                                     pass
                                 for title, url in files_links.items():
                                     response = requests.get(url, headers=HEADERS)
-                                    with open(f'{self.main_directory}/{titles}/{title}', "wb") as f:
+                                    with open(f'{self.filePath}/{self.main_directory}/{titles}/{title}', "wb") as f:
                                         f.write(response.content)
                                 files_links = {}
                         except Exception:
                             if len(files_links) > 0:
                                 # if not os.path.exists(self.main_directory):
-                                path = os.path.join(self.main_directory, titles)
-                                os.makedirs(path)
+                                # path = os.path.join(self.main_directory, titles)
+                                # os.makedirs(path)
+                                os.makedirs(f'{self.filePath}/{self.main_directory}/{titles}', exist_ok=True)
                                 for title, url in files_links.items():
                                     response = requests.get(url, headers=HEADERS)
-                                    with open(f'{self.main_directory}/{titles}/{title}', "wb") as f:
+                                    with open(f'{self.filePath}/{self.main_directory}/{titles}/{title}', "wb") as f:
                                         f.write(response.content)
                                 files_links = {}
 
@@ -675,7 +678,7 @@ class  Parser:
         self.status_log()
         # global_dict.update(self.documents(self.soup))
         try:
-            with open(f"{self.main_directory}/Все данные закупки №{self.num}.json", "a", encoding="utf-8") as file:
+            with open(f"{self.filePath}/{self.main_directory}/Все данные закупки №{self.num}.json", "a", encoding="utf-8") as file:
                 json.dump(global_dict, file, indent=4, ensure_ascii=False)
             self.status = 'Успешная запись файлов'
         except Exception:
@@ -713,7 +716,7 @@ class  Parser:
                             doc.add_paragraph(str(item))
                 else:
                     doc.add_paragraph(str(value))
-            doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+            doc.save(f"{self.filePath}/{self.main_directory}/Все данные о закупке №{self.num}.docx")
             self.status = 'Успешная запись файлов'
         except Exception:
             self.status = 'Ошибка записи файлов'

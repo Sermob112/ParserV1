@@ -157,20 +157,19 @@ def makeLinkNum(numer):
 # if len(data) % 2 != 0:
 #     print("Неструктурированные данные:", unstructured_data)
 ################################
-csv_filename = "OrderSearch(1-261)_22.09.2023 строительство судна.csv"
-data_from_second_column = []
+def makeMass(csv_filename):
+    data_from_second_column = []
+    # Открываем CSV файл для чтения
+    with open(csv_filename, newline='', encoding='cp1251') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
 
-# Открываем CSV файл для чтения
-with open(csv_filename, newline='', encoding='cp1251') as csvfile:
-    reader = csv.reader(csvfile, delimiter=';')
+        # Пропускаем заголовок, если есть
+        next(reader, None)
 
-    # Пропускаем заголовок, если есть
-    next(reader, None)
-
-    # Читаем вторую строку и выбираем вторую часть (индекс 1)
-    for row in reader:
-            # Проверяем, что строка содержит как минимум два элемента (для второго столбца)
-            if len(row) >= 2:
-                # Добавляем элемент второго столбца в массив
-                data_from_second_column.append(row[1].replace("№", ""))
-print(data_from_second_column)
+        # Читаем вторую строку и выбираем вторую часть (индекс 1)
+        for row in reader:
+                # Проверяем, что строка содержит как минимум два элемента (для второго столбца)
+                if len(row) >= 2:
+                    # Добавляем элемент второго столбца в массив
+                    data_from_second_column.append(row[1].replace("№", ""))
+    print(data_from_second_column)
