@@ -14,17 +14,17 @@ class  Parser:
         self.log_data = []
         pass
 
-    def agent(self, numer, filePath):
+    def agent(self, numer):
         self.num = numer
-        self.filePath = filePath
+       # self.filePath = filePath
         try:
             test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
             test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
-            HEADERS_test = {
+            self.HEADERS = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                               ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
 
-            req = requests.get(test_url3, headers=HEADERS_test, params=None)
+            req = requests.get(test_url3, headers=self.HEADERS, params=None)
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
@@ -643,7 +643,8 @@ class  Parser:
                 elif title == 'Документы':
                     data[title] = self.documents(soup)
                 elif title == 'Результаты определения поставщика (подрядчика, исполнителя)':
-                    data[title] = self.supplier_result(link)
+                    # data[title] = self.supplier_result(link)
+                    self.supplier_docs()   
                 # elif len(self.journal_of_events(link))> 0:
                 elif title == 'Журнал событий':
                     data[title] = self.journal_of_events(link)
@@ -653,6 +654,65 @@ class  Parser:
                print(f"Ошибка в этой части {title}")
 
         return data
+
+
+    
+
+        
+
+
+    def GetAllDocks(self):
+        data = {}
+        i = 0
+        # HEADERS = {
+        #         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+        #                         ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+        linkers = self.all_link()
+
+        for title, link in linkers.items():
+            test = 0
+            # req = requests.get(url=link, headers=self.HEADERS)
+            # src = req.text
+            # soup = BeautifulSoup(src, "lxml")
+            try:
+                # def docs():
+                #     data[title] = self.documents(soup)
+                # def jorns():
+                #     data[title] = self.journal_of_events(link)
+                #
+                # options = {
+                #     'Документы': docs(),
+                #     'Журнал событий': jorns()
+                #
+                # }
+                # options.get(title)()
+
+                # if len(self.main_info_body(soup)) < 0:
+                #     data[title] = self.main_info_body(soup)
+                # elif title == 'Документы':
+                #     data[title] = self.documents(soup)
+                if title == 'Результаты определения поставщика':
+                    # data[title] = self.supplier_result(link)
+                    test = self.get_supplier_docs(link)
+                # elif len(self.journal_of_events(link))> 0:
+                # elif title == 'Журнал событий':
+                #     data[title] = self.journal_of_events(link)
+                else:
+                    pass
+            except Exception:
+                print(f"Ошибка в этой части {title}")
+
+        # return data
+        return test
+
+    def get_supplier_docs(self, link):
+        req = requests.get(url=link, headers=self.HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+        links = soup.find(class_='tableBlock__col').get_text().split()
+        linkl = 'https://zakupki.gov.ru/' + links.get('href')
+
+        return linkl
     #
 
     def Test_Json(self):
@@ -725,6 +785,10 @@ class  Parser:
 
 
     #######################################################################
+par = Parser()
+par.agent('0335100005614000007')
+print(par.GetAllDocks())
+
 # par = Parser()
 # par.agent('0373100119621000003')
 #                 # par.Make_Json()
