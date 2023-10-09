@@ -43,7 +43,7 @@ class  ParserOld:
     def agent(self, numer):
         # self.num = numer
         try:
-            test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
+            # test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
             test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
             self.HEADERS = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
@@ -65,7 +65,10 @@ class  ParserOld:
     def parse_head(self ):
         mass = []
         serial_date = {}
+
         source = self.soup.find(class_="col-6 pr-0 mr-21px")
+        # self.ObjectName =[]
+        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"','')
         # reg_num = self.soup.find(class_='registry-entry__header-mid__number').get_text().strip()
         # self.main_directory = 'Закупка ' + str(reg_num)
         lines = source.get_text().strip().splitlines()
@@ -76,8 +79,8 @@ class  ParserOld:
         leftMass = [line.strip() for line in lines if line.strip()]
         cleaned_left = [item.replace('\xa0', ' ') for item in leftMass]
 
-        return  mainMass+cleaned_left
-        # return self.main_directory
+        # return  mainMass+cleaned_left
+        return self.ObjectName
     
     def get_links(self):
         tabs_of_links = {}
@@ -185,9 +188,9 @@ class  ParserOld:
                                         # path = os.path.join(self.main_directory, text)
                                         # os.makedirs(path)
                                         # Создаем каталог для сохранения файлов, если его нет
-                                        os.makedirs(f'{self.filePath}/{self.main_directory}/{title_text}', exist_ok=True)
+                                        os.makedirs(f'{self.filePath}/{self.main_directory + self.ObjectName}/{title_text}', exist_ok=True)
                                         # Сохраняем файл в указанный каталог
-                                        with open(f'{self.filePath}/{self.main_directory}/{title_text}/{text}', "wb") as f:
+                                        with open(f'{self.filePath}/{self.main_directory + self.ObjectName}/{title_text}/{text}', "wb") as f:
                                             f.write(response.content)
                                     else:
                                         print(f"Не удалось скачать файл: {linkl}")
@@ -232,9 +235,10 @@ class  ParserOld:
 
 
 
-# par = ParserOld()
-# par.makeLinkNum('31704765959')
-# par.makeDoc()
+par = ParserOld()
+par.agent('9272643')
+print(par.parse_head())
+par.makeDoc()
 
 # par.parse_head()
 # print(par.get_links())
