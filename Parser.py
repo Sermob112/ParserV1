@@ -705,15 +705,170 @@ class  Parser:
         # return data
         return test
 
+    def get_supplier_links(self,num):
+        link_mass = []
+        link = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/supplier-results.html?regNumber={num}'
+        req = requests.get(url=link, headers=self.HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+        rows = soup.find_all(class_='row blockInfo')
+        for i in rows:
+            a = i.find_all('a')
+            for j in a:
+                try:
+                    substring1 = 'https://zakupki.gov.ru/epz/order/notice/ok20/view/protocol/protocol-main-info.html?'
+                    substring2 = 'https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?'
+                    link = 'https://zakupki.gov.ru' + j.get('href')
+                    if substring1 in link:
+                        link = link.replace('protocol-main-info.html', 'protocol-docs.html')
+                    if substring2 in link:
+                         link = link.replace('common-info.html', 'document-info.html')
+                    link_mass.append(link)
+                except:
+                    continue
+        if  link_mass:
+            for i in link_mass:
+                try:
+                    self.get_supplier_docs(i)
+                except Exception as e1:
+                    print(f'Ошибка в self.get_supplier_docs для {i}: {e1}')
+                    try:
+                        self.get_contract_details(i)
+                    except Exception as e2:
+                        print(f'Ошибка в self.get_contract_details для {i}: {e2}')
+                        try:
+                            self.get_electronic_documents(i)
+                        except Exception as e3:
+                            print(f'Ошибка в self.get_electronic_documents для {i}: {e3}')
+                            # Если нужно прервать выполнение после всех ошибок
+                            continue
+                
+
+        # linkl = 'https://zakupki.gov.ru/' + links.get('href')
+        # link_element = soup.find_all('a')
+        # if link_element:
+        #     link = link_element.get('href')
+        #     link_mass.append(link)
+        return link_mass
+    
     def get_supplier_docs(self, link):
         req = requests.get(url=link, headers=self.HEADERS)
         src = req.text
         soup = BeautifulSoup(src, "lxml")
-        links = soup.find(class_='tableBlock__col').get_text().split()
-        linkl = 'https://zakupki.gov.ru/' + links.get('href')
+        row_block_info= soup.find_all(class_='row blockInfo')
+        for laxir in row_block_info:
+            title = laxir.find(class_='blockInfo__title')
+            title_text = title.get_text().strip()
+            luxit = laxir.find_all('a')
+            try:
+                for links in luxit:
+                    # href = links.get('href')
+                    if 'download' in links.get('href'):
+                            linkl = links.get('href')
+                            titk = links.get_text().strip()
+                            response = requests.get(f'{linkl}', headers=self.HEADERS)
+                            if response.status_code == 200:
+                                os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
+                                with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
+                                    f.write(response.content)
+                            else:
+                                print(f"Не удалось скачать файл: {linkl}")
+            except Exception as e:
+                print(f"Произошла ошибка: {str(e)}")
 
-        return linkl
-    #
+
+    
+
+
+    def get_result_contracts(self, num):
+        link = f'https://zakupki.gov.ru/epz/order/notice/rpec/documents.html?regNumber={num}0001'
+        req = requests.get(link, headers=self.HEADERS, params=None)
+        src = req.text
+        soup = BeautifulSoup(src, 'lxml')
+        findTitle = soup.find_all(class_='col-sm-12 blockInfo')
+        for titles in findTitle:
+            title = titles.find(class_='blockInfo__title')
+            if title:
+                title_text = title.get_text().strip()
+                values = titles.find_all(class_='blockFilesTabDocs')
+                for laxir in values:
+                    luxit = laxir.find_all('a')
+                    try:
+                        for links in luxit:
+                            # href = links.get('href')
+                            if 'download' in links.get('href'):
+                                    linkl = links.get('href')
+                                    titk = links.get('title')
+                                    response = requests.get(f'{linkl}', headers=self.HEADERS)
+                                    if response.status_code == 200:
+                                        os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
+                                        with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
+                                            f.write(response.content)
+                                    else:
+                                        print(f"Не удалось скачать файл: {linkl}")
+                    except Exception as e:
+                        print(f"Произошла ошибка: {str(e)}")
+
+    def get_contract_details(self, link):
+        req = requests.get(url=link, headers=self.HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+        cart = soup.find(class_='card-attachments')
+        findTitle = cart.find_all(class_='container card-attachments-container')
+        for titles in findTitle:
+            title = titles.find(class_='title pb-0')
+            title_text = title.get_text().strip()
+            values = titles.find_all(class_='col-12')
+            for laxir in values:
+                luxit = laxir.find_all('a')
+                try:
+                    for links in luxit:
+                        # href = links.get('href')
+                        if 'download' in links.get('href'):
+                                linkl = links.get('href')
+                                titk = links.get('title')
+                                # file_type_pattern = r'\.\w+'
+                                # cleaned_titk = re.sub(file_type_pattern, '', titk)
+                                new_titk = re.sub(r'\s*\([^)]*\)', '', titk)
+                                # titk = links.get_text().replace("\n","").replace(" ","")
+                                response = requests.get(f'{linkl}', headers=self.HEADERS)
+                                if response.status_code == 200:
+                                    os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
+                                    with open(f'{self.main_directory}/{title_text}/{new_titk}', "wb") as f:
+                                        f.write(response.content)
+                                else:
+                                    print(f"Не удалось скачать файл: {linkl}")
+                except Exception as e:
+                    print(f"Произошла ошибка: {str(e)}")
+
+    def get_electronic_documents(self, link):
+        req = requests.get(url=link, headers=self.HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
+
+        findTitle = soup.find_all(class_='block-lot card-attachments__block')
+        for titles in findTitle:
+            title = titles.find(class_='title pb-0')
+            title_text = title.get_text().strip()
+            values = titles.find_all(class_='col-12')
+            for laxir in values:
+                luxit = laxir.find_all('a')
+                try:
+                    for links in luxit:
+                        # href = links.get('href')
+                        if 'download' in links.get('href'):
+                                linkl = links.get('href')
+                                titk = links.get_text()
+                                response = requests.get(f'{linkl}', headers=self.HEADERS)
+                                if response.status_code == 200:
+                                    os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
+                                    with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
+                                        f.write(response.content)
+                                else:
+                                    print(f"Не удалось скачать файл: {linkl}")
+                except Exception as e:
+                    print(f"Произошла ошибка: {str(e)}")
+
 
     def Test_Json(self):
         with open(f"{self.main_directory}/all_docs.json", "a", encoding="utf-8") as file:
@@ -786,8 +941,17 @@ class  Parser:
 
     #######################################################################
 par = Parser()
-par.agent('0335100005614000007')
-print(par.GetAllDocks())
+par.agent('0373100119622000001')
+par.parse_head()
+print(par.get_supplier_links('0373100119622000001'))
+par.get_result_contracts('0373100119622000001')
+
+# par.get_supplier_docs('https://zakupki.gov.ru/epz/order/notice/ok20/view/protocol/protocol-docs.html?regNumber=0373100119622000001&protocolId=39399003')
+#par.get_contract_details('https://zakupki.gov.ru/epz/contract/contractCard/document-info.html?reestrNumber=1770201740022000003&contractInfoId=83632530')
+# par.get_electronic_documents('https://zakupki.gov.ru/epz/rdik/card/info.html?id=2652630')
+
+# par.get_documents_contracts('0345100003720000060')
+# print(par.GetAllDocks())
 
 # par = Parser()
 # par.agent('0373100119621000003')
