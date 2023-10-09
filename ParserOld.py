@@ -235,10 +235,10 @@ class  ParserOld:
 
 
 
-par = ParserOld()
-par.agent('9272643')
-print(par.parse_head())
-par.makeDoc()
+# par = ParserOld()
+# par.agent('9272643')
+# print(par.parse_head())
+# par.makeDoc()
 
 # par.parse_head()
 # print(par.get_links())

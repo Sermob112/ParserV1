@@ -43,8 +43,13 @@ class mywindow(QtWidgets.QMainWindow):
             for i in self.mass:
                 try:
                     par.agent(i, self.folder_path_out)
+                    par.parse_head()
+                    par.documents(i)
+                    par.get_supplier_links(i)
+                    par.get_result_contracts(i)
+
                     # par.Make_Json()
-                    par.Make_Dock()
+                    # par.Make_Dock()
                     tr = par.status_log()
                 except Exception as e:
                     try:

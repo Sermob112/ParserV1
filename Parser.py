@@ -14,9 +14,9 @@ class  Parser:
         self.log_data = []
         pass
 
-    def agent(self, numer):
+    def agent(self, numer, filePath):
         self.num = numer
-       # self.filePath = filePath
+        self.filePath = filePath
         try:
             test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
             test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
@@ -42,6 +42,8 @@ class  Parser:
         mass = []
         serial_date = {}
         serial_number = self.soup.find(class_="registry-entry__header-mid__number")
+        name = self.soup.find(class_='cardMainInfo__content').get_text().strip()
+        self.object_name = f' {name}'
         try:
             if serial_number != None:
                 serial_number = self.soup.find(class_="registry-entry__header-mid__number").find('a').text.strip()
@@ -72,6 +74,7 @@ class  Parser:
                 for i in zakupchik:
                     object_zak = i.find(class_='cardMainInfo__title').text.strip()
                     zakazchic = i.find(class_='cardMainInfo__content').text.strip()
+                    
                     svedenia_o_zakupke.append({object_zak: zakazchic})
                     a_tag = i.find('a')
                     if a_tag == None:
@@ -343,7 +346,7 @@ class  Parser:
 
 
 
-    def documents(self,soup):
+    def documents(self, num):
         block_info_title = []
         infos = []
         sec_attrib = []
@@ -353,13 +356,13 @@ class  Parser:
         font = []
         files_links = {}
         i = 0
-        HEADERS = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-                          ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-        # link = 'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber=0124200000623001098'
-        # req = requests.get(url=link, headers=HEADERS)
-        # src = req.text
-        # soup = BeautifulSoup(src, "lxml")
+        # HEADERS = {
+        #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+        #                   ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+        link = f'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber={num}'
+        req = requests.get(url=link, headers=self.HEADERS)
+        src = req.text
+        soup = BeautifulSoup(src, "lxml")
         try:
             col_sm_12 = soup.find_all(class_ ='col-sm-12 blockInfo')
             for col in col_sm_12:
@@ -386,13 +389,13 @@ class  Parser:
                             if len(files_links) > 0:
                                 try:
                                     # path = os.path.join(self.main_directory, titles)
-                                    os.makedirs(f'{self.filePath}/{self.main_directory}/{titles}', exist_ok=True)
+                                    os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{titles}', exist_ok=True)
                                     # os.makedirs(path)
                                 except Exception:
                                     pass
                                 for title, url in files_links.items():
-                                    response = requests.get(url, headers=HEADERS)
-                                    with open(f'{self.filePath}/{self.main_directory}/{titles}/{title}', "wb") as f:
+                                    response = requests.get(url, headers=self.HEADERS)
+                                    with open(f'{self.filePath}/{self.main_directory + self.object_name}/{titles}/{title}', "wb") as f:
                                         f.write(response.content)
                                 files_links = {}
                         except Exception:
@@ -400,10 +403,10 @@ class  Parser:
                                 # if not os.path.exists(self.main_directory):
                                 # path = os.path.join(self.main_directory, titles)
                                 # os.makedirs(path)
-                                os.makedirs(f'{self.filePath}/{self.main_directory}/{titles}', exist_ok=True)
+                                os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{titles}', exist_ok=True)
                                 for title, url in files_links.items():
-                                    response = requests.get(url, headers=HEADERS)
-                                    with open(f'{self.filePath}/{self.main_directory}/{titles}/{title}', "wb") as f:
+                                    response = requests.get(url, headers=self.HEADERS)
+                                    with open(f'{self.filePath}/{self.main_directory + self.object_name}/{titles}/{title}', "wb") as f:
                                         f.write(response.content)
                                 files_links = {}
 
@@ -729,11 +732,11 @@ class  Parser:
         if  link_mass:
             for i in link_mass:
                 try:
-                    self.get_supplier_docs(i)
+                    self.get_contract_details(i)
                 except Exception as e1:
                     print(f'Ошибка в self.get_supplier_docs для {i}: {e1}')
                     try:
-                        self.get_contract_details(i)
+                        self.get_supplier_docs(i)
                     except Exception as e2:
                         print(f'Ошибка в self.get_contract_details для {i}: {e2}')
                         try:
@@ -801,8 +804,8 @@ class  Parser:
                                     titk = links.get('title')
                                     response = requests.get(f'{linkl}', headers=self.HEADERS)
                                     if response.status_code == 200:
-                                        os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
-                                        with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
+                                        os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+                                        with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
                                             f.write(response.content)
                                     else:
                                         print(f"Не удалось скачать файл: {linkl}")
@@ -833,8 +836,8 @@ class  Parser:
                                 # titk = links.get_text().replace("\n","").replace(" ","")
                                 response = requests.get(f'{linkl}', headers=self.HEADERS)
                                 if response.status_code == 200:
-                                    os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
-                                    with open(f'{self.main_directory}/{title_text}/{new_titk}', "wb") as f:
+                                    os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+                                    with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{new_titk}', "wb") as f:
                                         f.write(response.content)
                                 else:
                                     print(f"Не удалось скачать файл: {linkl}")
@@ -861,8 +864,8 @@ class  Parser:
                                 titk = links.get_text()
                                 response = requests.get(f'{linkl}', headers=self.HEADERS)
                                 if response.status_code == 200:
-                                    os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
-                                    with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
+                                    os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+                                    with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
                                         f.write(response.content)
                                 else:
                                     print(f"Не удалось скачать файл: {linkl}")
@@ -940,11 +943,11 @@ class  Parser:
 
 
     #######################################################################
-par = Parser()
-par.agent('0373100119622000001')
-par.parse_head()
-print(par.get_supplier_links('0373100119622000001'))
-par.get_result_contracts('0373100119622000001')
+# par = Parser()
+# par.agent('0373100119622000001')
+# par.parse_head()
+# print(par.get_supplier_links('0373100119622000001'))
+# par.get_result_contracts('0373100119622000001')
 
 # par.get_supplier_docs('https://zakupki.gov.ru/epz/order/notice/ok20/view/protocol/protocol-docs.html?regNumber=0373100119622000001&protocolId=39399003')
 #par.get_contract_details('https://zakupki.gov.ru/epz/contract/contractCard/document-info.html?reestrNumber=1770201740022000003&contractInfoId=83632530')
