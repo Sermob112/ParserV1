@@ -31,7 +31,7 @@ class  ParserOld:
             a_tag = col.find('a')
             match = re.search(r'noticeInfoId=(\d+)', a_tag['href'])
             number = match.group(1)
-            self.main_directory = 'Закупка № ' + str(numer)
+            self.main_directory = 'Закупка № ' + str(numer) + " "
             self.num = numer
             self.agent(numer = number)
             # return  number
@@ -68,7 +68,7 @@ class  ParserOld:
 
         source = self.soup.find(class_="col-6 pr-0 mr-21px")
         # self.ObjectName =[]
-        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"','')
+        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"','').replace('\r','')[:128].replace(' ', '_').replace('\n','') 
         # reg_num = self.soup.find(class_='registry-entry__header-mid__number').get_text().strip()
         # self.main_directory = 'Закупка ' + str(reg_num)
         lines = source.get_text().strip().splitlines()

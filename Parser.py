@@ -42,7 +42,7 @@ class  Parser:
         mass = []
         serial_date = {}
         serial_number = self.soup.find(class_="registry-entry__header-mid__number")
-        name = self.soup.find(class_='cardMainInfo__content').get_text().strip()
+        name = self.soup.find(class_='cardMainInfo__content').get_text().strip().replace('"','').replace('\r','')[:128].replace(' ', '_').replace('\n','')
         self.object_name = f' {name}'
         try:
             if serial_number != None:
@@ -55,34 +55,34 @@ class  Parser:
                 self.main_directory = 'Закупка № ' + str(regNumber)
 
         #####Сведенья о закупке###########################
-            svedenia_o_zakupke = []
-            zakupchik = self.soup.find(class_ = 'registry-entry__body')
-            if zakupchik != None:
-                zakupchik = self.soup.find(class_ = 'registry-entry__body').find_all(class_ = 'registry-entry__body-block')
-                for i in zakupchik:
-                    object_zak = i.find(class_ = 'registry-entry__body-title').text.strip()
-                    zakazchic = i.find(class_ = 'registry-entry__body-value').text.strip()
-                    svedenia_o_zakupke.append({object_zak: zakazchic})
-                    a_tag = i.find('a')
-                    if a_tag == None:
-                        continue
-                    else:
-                        link = 'https://zakupki.gov.ru' + a_tag["href"]
-                    svedenia_o_zakupke.append({object_zak: zakazchic, 'ссылка на огранизацию': link})
-            else:
-                zakupchik = self.soup.find(class_='sectionMainInfo__body').find_all(class_='cardMainInfo__section')
-                for i in zakupchik:
-                    object_zak = i.find(class_='cardMainInfo__title').text.strip()
-                    zakazchic = i.find(class_='cardMainInfo__content').text.strip()
+            # svedenia_o_zakupke = []
+            # zakupchik = self.soup.find(class_ = 'registry-entry__body')
+            # if zakupchik != None:
+            #     zakupchik = self.soup.find(class_ = 'registry-entry__body').find_all(class_ = 'registry-entry__body-block')
+            #     for i in zakupchik:
+            #         object_zak = i.find(class_ = 'registry-entry__body-title').text.strip()
+            #         zakazchic = i.find(class_ = 'registry-entry__body-value').text.strip()
+            #         svedenia_o_zakupke.append({object_zak: zakazchic})
+            #         a_tag = i.find('a')
+            #         if a_tag == None:
+            #             continue
+            #         else:
+            #             link = 'https://zakupki.gov.ru' + a_tag["href"]
+            #         svedenia_o_zakupke.append({object_zak: zakazchic, 'ссылка на огранизацию': link})
+            # else:
+            #     zakupchik = self.soup.find(class_='sectionMainInfo__body').find_all(class_='cardMainInfo__section')
+            #     for i in zakupchik:
+            #         object_zak = i.find(class_='cardMainInfo__title').text.strip()
+            #         zakazchic = i.find(class_='cardMainInfo__content').text.strip()
                     
-                    svedenia_o_zakupke.append({object_zak: zakazchic})
-                    a_tag = i.find('a')
-                    if a_tag == None:
-                        continue
-                    else:
-                        link = 'https://zakupki.gov.ru' + a_tag["href"]
-                    mass.append({object_zak:zakazchic, 'ссылка на огранизацию':link})
-                mass.append(svedenia_o_zakupke)
+            #         svedenia_o_zakupke.append({object_zak: zakazchic})
+            #         a_tag = i.find('a')
+            #         if a_tag == None:
+            #             continue
+            #         else:
+            #             link = 'https://zakupki.gov.ru' + a_tag["href"]
+            #         mass.append({object_zak:zakazchic, 'ссылка на огранизацию':link})
+            #     mass.append(svedenia_o_zakupke)
 
             # link = a_tag["href"]
 
@@ -90,30 +90,30 @@ class  Parser:
         #######################################
         #Сведенья о закупе (начальная цена и пр)
         # ####Начальная цена
-            priece_info = []
-            price = self.soup.find(class_ = 'price-block')
-            locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
-            if price != None:
-                price = self.soup.find(class_ = 'price-block').find_all('div')
-                for i in price:
-                    title = i.text
-            else:
-                price = self.soup.find(class_='sectionMainInfo borderRight col-3 colSpaceBetween').find_all('span')
-                for i in price:
-                    title = i.text.strip()
-                    if '\xa0' in title:
-                        title = title.replace('\xa0', '')  # remove non-breaking spaces
-                        title = title.replace(',', '.')  # replace comma with dot
-                    priece_info.append(title)
-            result = []
-            for i in range(0, len(priece_info), 2):
-                key = priece_info[i]
-                value = priece_info[i+1] if i+1 < len(priece_info) else ''
-                # result.append({key: value})
-                mass.append({key: value})
-                serial_date['Номер заказа'] = mass
-            self.status = 'Успешный парсинг заголовка'
-            return serial_date
+        #     priece_info = []
+        #     price = self.soup.find(class_ = 'price-block')
+        #     locale.setlocale(locale.LC_ALL, 'de_DE.utf8')
+        #     if price != None:
+        #         price = self.soup.find(class_ = 'price-block').find_all('div')
+        #         for i in price:
+        #             title = i.text
+        #     else:
+        #         price = self.soup.find(class_='sectionMainInfo borderRight col-3 colSpaceBetween').find_all('span')
+        #         for i in price:
+        #             title = i.text.strip()
+        #             if '\xa0' in title:
+        #                 title = title.replace('\xa0', '')  # remove non-breaking spaces
+        #                 title = title.replace(',', '.')  # replace comma with dot
+        #             priece_info.append(title)
+        #     result = []
+        #     for i in range(0, len(priece_info), 2):
+        #         key = priece_info[i]
+        #         value = priece_info[i+1] if i+1 < len(priece_info) else ''
+        #         # result.append({key: value})
+        #         mass.append({key: value})
+        #         serial_date['Номер заказа'] = mass
+        #     self.status = 'Успешный парсинг заголовка'
+        #     return serial_date
         except Exception:
                 self.status = 'Произошла ошибка с парсингом заголовка'
 
@@ -370,8 +370,6 @@ class  Parser:
                 block_info_title.append(titles)
 
                 try:
-
-
                     section_value = col.find_all(class_='section__value docName')
                     for sec in section_value:
                         infos.append(sec.get_text().strip())
@@ -411,36 +409,36 @@ class  Parser:
                                 files_links = {}
 
                     #############################################################
-                    col_sm = col.find_all(class_='col-sm')
-                    for col_12 in col_sm:
-                        sec_values = col_12.find_all(class_='section__value')
-                        for val in sec_values:
-                            sec_value.append(val.get_text().strip())
-                        sec_attributs = col_12.find_all(class_='section__attrib')
-                        for col_12 in sec_attributs:
-                            try:
-                                sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
-                                i = i + 1
-                            except Exception:
-                                i = 0
-                                sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
-                    front = col.find_all('div', attrs={'style': 'font-size: 14px'})
-                    if len(front) > 0:
-                        for f in front:
-                            font.append(f.get_text().strip())
+                    # col_sm = col.find_all(class_='col-sm')
+                    # for col_12 in col_sm:
+                    #     sec_values = col_12.find_all(class_='section__value')
+                    #     for val in sec_values:
+                    #         sec_value.append(val.get_text().strip())
+                    #     sec_attributs = col_12.find_all(class_='section__attrib')
+                    #     for col_12 in sec_attributs:
+                    #         try:
+                    #             sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
+                    #             i = i + 1
+                    #         except Exception:
+                    #             i = 0
+                    #             sec_attrib.append({sec_value[i]: col_12.get_text().strip().replace('\n', '')})
+                    # front = col.find_all('div', attrs={'style': 'font-size: 14px'})
+                    # if len(front) > 0:
+                    #     for f in front:
+                    #         font.append(f.get_text().strip())
 
-                    if len(col_sm) == 0:
-                        perm = col.find(class_='section__title').get_text().strip()
-                        # font = []
-                        sec_attrib.append(perm)
+                    # if len(col_sm) == 0:
+                    #     perm = col.find(class_='section__title').get_text().strip()
+                    #     # font = []
+                    #     sec_attrib.append(perm)
 
-                    infos.append(sec_attrib)
-                    infos.append(font)
-                    data[titles] = infos
-                    infos = []
-                    font = []
-                    sec_value = []
-                    sec_attrib = []
+                    # infos.append(sec_attrib)
+                    # infos.append(font)
+                    # data[titles] = infos
+                    # infos = []
+                    # font = []
+                    # sec_value = []
+                    # sec_attrib = []
 
                 except Exception:
                     pass
@@ -721,30 +719,29 @@ class  Parser:
                 try:
                     substring1 = 'https://zakupki.gov.ru/epz/order/notice/ok20/view/protocol/protocol-main-info.html?'
                     substring2 = 'https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?'
+                    substring3 = 'https://zakupki.gov.ru/epz/rdik/card/info.html?'
                     link = 'https://zakupki.gov.ru' + j.get('href')
                     if substring1 in link:
                         link = link.replace('protocol-main-info.html', 'protocol-docs.html')
+                      
+                        self.get_supplier_docs(link)
                     if substring2 in link:
-                         link = link.replace('common-info.html', 'document-info.html')
+                        link = link.replace('common-info.html', 'document-info.html')
+                        self.get_contract_details(link)
+                    if substring3 in link:
+                        self.get_electronic_documents(link)
+
                     link_mass.append(link)
                 except:
                     continue
-        if  link_mass:
-            for i in link_mass:
-                try:
-                    self.get_contract_details(i)
-                except Exception as e1:
-                    print(f'Ошибка в self.get_supplier_docs для {i}: {e1}')
-                    try:
-                        self.get_supplier_docs(i)
-                    except Exception as e2:
-                        print(f'Ошибка в self.get_contract_details для {i}: {e2}')
-                        try:
-                            self.get_electronic_documents(i)
-                        except Exception as e3:
-                            print(f'Ошибка в self.get_electronic_documents для {i}: {e3}')
-                            # Если нужно прервать выполнение после всех ошибок
-                            continue
+        # if  link_mass:
+        #     for i in link_mass:
+        #         try:
+        #             self.get_electronic_documents(i)
+        #         except Exception as e3:
+        #             print(f'Ошибка в self.get_electronic_documents для {i}: {e3}')
+        #             # Если нужно прервать выполнение после всех ошибок
+        #             continue
                 
 
         # linkl = 'https://zakupki.gov.ru/' + links.get('href')
@@ -769,17 +766,26 @@ class  Parser:
                     if 'download' in links.get('href'):
                             linkl = links.get('href')
                             titk = links.get_text().strip()
-                            response = requests.get(f'{linkl}', headers=self.HEADERS)
-                            if response.status_code == 200:
-                                os.makedirs(f'{self.main_directory}/{title_text}', exist_ok=True)   
-                                with open(f'{self.main_directory}/{title_text}/{titk}', "wb") as f:
-                                    f.write(response.content)
-                            else:
-                                print(f"Не удалось скачать файл: {linkl}")
+                            self.downloader(linkl,title_text)
+                            # response = requests.get(f'{linkl}', headers=self.HEADERS)
+                            # if response.status_code == 200:
+                            #     os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+                            #     with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
+                            #         f.write(response.content)
+                            # else:
+                            #     print(f"Не удалось скачать файл: {linkl}")
             except Exception as e:
                 print(f"Произошла ошибка: {str(e)}")
+                continue
 
-
+    def downloader(self,linkl,title_text,titk):
+        response = requests.get(f'{linkl}', headers=self.HEADERS)
+        if response.status_code == 200:
+            os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+            with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
+                f.write(response.content)
+        else:
+            print(f"Не удалось скачать файл: {linkl}")
     
 
 
@@ -811,6 +817,7 @@ class  Parser:
                                         print(f"Не удалось скачать файл: {linkl}")
                     except Exception as e:
                         print(f"Произошла ошибка: {str(e)}")
+                        continue
 
     def get_contract_details(self, link):
         req = requests.get(url=link, headers=self.HEADERS)
@@ -843,6 +850,7 @@ class  Parser:
                                     print(f"Не удалось скачать файл: {linkl}")
                 except Exception as e:
                     print(f"Произошла ошибка: {str(e)}")
+                    continue
 
     def get_electronic_documents(self, link):
         req = requests.get(url=link, headers=self.HEADERS)
@@ -871,6 +879,7 @@ class  Parser:
                                     print(f"Не удалось скачать файл: {linkl}")
                 except Exception as e:
                     print(f"Произошла ошибка: {str(e)}")
+                    continue
 
 
     def Test_Json(self):
@@ -943,10 +952,10 @@ class  Parser:
 
 
     #######################################################################
-# par = Parser()
+#par = Parser()
 # par.agent('0373100119622000001')
 # par.parse_head()
-# print(par.get_supplier_links('0373100119622000001'))
+#print(par.get_supplier_links('0373100119622000001'))
 # par.get_result_contracts('0373100119622000001')
 
 # par.get_supplier_docs('https://zakupki.gov.ru/epz/order/notice/ok20/view/protocol/protocol-docs.html?regNumber=0373100119622000001&protocolId=39399003')
