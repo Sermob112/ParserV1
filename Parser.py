@@ -380,7 +380,7 @@ class  Parser:
                         luxit = lux.find_all('a')
                         try:
                             for links in luxit:
-                                if 'download' in links.get('href'):
+                                if 'download'  in links.get('href').lower():
                                     linkl = links.get('href')
                                     titk = links.get('title')
                                     files_links[titk] = linkl
@@ -763,7 +763,7 @@ class  Parser:
             try:
                 for links in luxit:
                     # href = links.get('href')
-                    if 'download' in links.get('href'):
+                    if 'download'  in links.get('href'):
                             linkl = links.get('href')
                             titk = links.get_text().strip()
                             self.downloader(linkl,title_text)
@@ -805,7 +805,7 @@ class  Parser:
                     try:
                         for links in luxit:
                             # href = links.get('href')
-                            if 'download' in links.get('href'):
+                            if 'download'  in links.get('href'):
                                     linkl = links.get('href')
                                     titk = links.get('title')
                                     response = requests.get(f'{linkl}', headers=self.HEADERS)
