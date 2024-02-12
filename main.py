@@ -1,8 +1,8 @@
 
-from PyQt5 import QtWidgets, uic,QtCore,QtGui
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-
+from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
+from ui_mainwindow import Ui_MainWindow  # Import the generated UI module
 import sys
+
 soup = 0
 from Parser import *
 from ParserOld import * 
@@ -25,21 +25,20 @@ from ParserOld import *
 # #  '32009417909', '31400922197', '31705132829', '31705157576', '31908595264', '0187300008422000006', '0373100119820000007', '31503106802', '0187300008423000161']
 # mass2 = []
 
-class mywindow(QtWidgets.QMainWindow):
-
-
+class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
     def __init__(self):
-        super(mywindow, self).__init__()
-        uic.loadUi('untitled.ui',self)
+        super(MyWindow, self).__init__()
+        self.setupUi(self)  # Call setupUi to initialize the UI
         self.Parse_but.clicked.connect(self.test)
         self.InputFileBut.clicked.connect(self.open_file_dialog)
         self.OutPutFileBut.clicked.connect(self.open_file_dialog_to_load)
         # self.InputFileBut_2.clicked.connect(self.test_mass)
         # self.new_win_but.clicked.connect(self.new_win)
+
     def test(self):
         par = Parser()
         parOld = ParserOld()
-        if self.mass != None:
+        if hasattr(self, 'mass') and self.mass is not None:
             for i in self.mass:
                 try:
                     par.agent(i, self.folder_path_out)
@@ -47,7 +46,6 @@ class mywindow(QtWidgets.QMainWindow):
                     par.documents(i)
                     par.get_supplier_links(i)
                     par.get_result_contracts(i)
-
                     # par.Make_Json()
                     # par.Make_Dock()
                     tr = par.status_log()
@@ -64,54 +62,43 @@ class mywindow(QtWidgets.QMainWindow):
         else:
             self.textBrowser.append(f"Выбирите файл для парсинга")
         self.textBrowser.append(f"Закончил парсинг")
+
     def open_file_dialog(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "All Files (*);;Text Files (*.csv)", options=options)
+        file_dialog = QFileDialog()
+        options = file_dialog.options()
+        file_name, _ = file_dialog.getOpenFileName(self, "Выберите файл", "", "All Files (*);;Text Files (*.csv)", options=options)
         if file_name:
             self.FilePathIn.setText(file_name)
-            self.mass = self.makeMass(file_name)
+            self.mass = self.make_mass(file_name)
+
     def open_file_dialog_to_load(self):
-        options = QFileDialog.Options()
-        self.folder_path_out = QFileDialog.getExistingDirectory(self, "Выберите папку", options=options)
+        file_dialog = QFileDialog()
+        options = file_dialog.options()
+        self.folder_path_out = file_dialog.getExistingDirectory(self, "Выберите папку", options=options)
         if self.folder_path_out:
             self.FilePathOut.setText(self.folder_path_out)
-         
-    
-    # def test_mass(self):
-    #     for i in self.mass:
-    #         self.textBrowser.append(f"{i}")
-        
-    def makeMass(self,csv_filename):
+
+    def make_mass(self, csv_filename):
         data_from_second_column = []
         # Открываем CSV файл для чтения
         with open(csv_filename, newline='', encoding='cp1251') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
-
             # Пропускаем заголовок, если есть
             next(reader, None)
-
             # Читаем вторую строку и выбираем вторую часть (индекс 1)
             for row in reader:
-                    # Проверяем, что строка содержит как минимум два элемента (для второго столбца)
-                    if len(row) >= 2:
-                        # Добавляем элемент второго столбца в массив
-                        data_from_second_column.append(row[1].replace("№", ""))
+                # Проверяем, что строка содержит как минимум два элемента (для второго столбца)
+                if len(row) >= 2:
+                    # Добавляем элемент второго столбца в массив
+                    data_from_second_column.append(row[1].replace("№", ""))
         return data_from_second_column
-        # print(data_from_second_column)
-
-
-    # def new_win(self):
-    #     self.Form = QtWidgets.QWidget()
-    #     self.ui.setipUi(self.Form)
-    #     self.Form.show()
-    #     # uic.loadUi('new_win.ui', self)
 
 def application():
     app = QApplication(sys.argv)
-    window = mywindow()
-
+    window = MyWindow()
     window.show()
     sys.exit(app.exec_())
+
 if __name__ == '__main__':
     application()
 
