@@ -47,8 +47,9 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
                     par.get_supplier_links(i)
                     par.get_result_contracts(i)
                     # par.Make_Json()
-                    # par.Make_Dock()
+                    par.Make_Dock(i)
                     tr = par.status_log()
+                    self.textBrowser.append(tr )
                 except Exception as e:
                     try:
                         parOld.makeLinkNum(i, self.folder_path_out)
