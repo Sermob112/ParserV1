@@ -40,26 +40,27 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         parOld = ParserOld()
         if hasattr(self, 'mass') and self.mass is not None:
             for i in self.mass:
-                try:
-                    par.agent(i, self.folder_path_out)
-                    par.parse_head()
-                    par.documents(i)
-                    par.get_supplier_links(i)
-                    par.get_result_contracts(i)
-                    # par.Make_Json()
-                    par.Make_Dock(i)
-                    tr = par.status_log()
-                    self.textBrowser.append(tr )
-                except Exception as e:
+                # try:
+                #     par.agent(i, self.folder_path_out)
+                #     par.parse_head()
+                #     par.documents(i)
+                #     par.get_supplier_links(i)
+                #     par.get_result_contracts(i)
+                #     # par.Make_Json()
+                #     par.Make_Dock(i)
+                #     # tr = par.status_log()
+                #     # self.textBrowser.append(tr )
+                # except Exception as e:
                     try:
                         parOld.makeLinkNum(i, self.folder_path_out)
+                        parOld.parse_head()
                         parOld.makeDoc()
                         # self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")
-                    except:
+                    except Exception as e:
                         self.textBrowser.append(f"Не получилось спарсить элемент {i}: {e}")
                         continue
-                else:
-                    continue
+                # else:
+                #     continue
         else:
             self.textBrowser.append(f"Выбирите файл для парсинга")
         self.textBrowser.append(f"Закончил парсинг")

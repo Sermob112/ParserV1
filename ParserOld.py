@@ -30,17 +30,18 @@ class  ParserOld:
             col = soup.find('div', class_ = 'registry-entry__header-mid__number')
             a_tag = col.find('a')
             match = re.search(r'noticeInfoId=(\d+)', a_tag['href'])
+            link_text = 'https://zakupki.gov.ru/' + a_tag.get('href')
             number = match.group(1)
             self.main_directory = 'Закупка № ' + str(numer) + " "
             self.num = numer
-            self.agent(numer = number)
+            self.agent(numer = number, link_text = link_text)
             # return  number
         except:
             status = 'Ошибка подключения'
     
 
 
-    def agent(self, numer):
+    def agent(self, numer,link_text):
         # self.num = numer
         try:
             # test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
@@ -49,7 +50,7 @@ class  ParserOld:
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                               ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
 
-            req = requests.get(test_url2, headers=self.HEADERS, params=None)
+            req = requests.get(link_text, headers=self.HEADERS, params=None)
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
@@ -68,7 +69,7 @@ class  ParserOld:
 
         source = self.soup.find(class_="col-6 pr-0 mr-21px")
         # self.ObjectName =[]
-        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"','').replace('\r','')[:128].replace(' ', '_').replace('\n','') 
+        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"','').replace('\r','')[:48].replace(' ', '_').replace('\n','') 
         # reg_num = self.soup.find(class_='registry-entry__header-mid__number').get_text().strip()
         # self.main_directory = 'Закупка ' + str(reg_num)
         lines = source.get_text().strip().splitlines()
@@ -198,13 +199,42 @@ class  ParserOld:
                         print(f"Произошла ошибка: {str(e)}")
 
     def makeDoc(self):
-        headMass = self.parse_head()
+        global_dict = {}
+        # global_dict.update(self.parse_head())
+        # global_dict.update(self.mainInfo())
+        # headMass = self.parse_head()
         mainMass= self.mainInfo()
-        doc = Document()
-        data = headMass + mainMass
-        structured_data = {}
+        # doc = Document()
+        # data = headMass + mainMass
+        # structured_data = {}
+        # print(mainMass)
+        try:
+            doc = Document()
+            # for item in global_dict:
+            #     doc.add_paragraph(item)
+            # doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
+            # Добавляем заголовок
+            doc.add_heading('Данные о закупке', level=1)
 
-        
+    # # Перебираем данные и добавляем их в документ
+    #         for key, value in global_dict.items():
+    #             doc.add_heading(key, level=2)
+    #             if isinstance(value, list):
+    #                 for item in value:
+    #                     if isinstance(item, dict):
+    #                         for sub_key, sub_value in item.items():
+    #                             doc.add_paragraph(f'{sub_key}: {sub_value}')
+    #                     else:
+    #                         doc.add_paragraph(str(item))
+    #             else:
+    #                 doc.add_paragraph(str(value))
+    #         doc.save(f"{self.filePath}/{self.main_directory}/Все данные о закупке №{self.num}.docx")
+    #         self.status = 'Успешная запись файлов'
+    #     except Exception:
+    #         self.status = 'Ошибка записи файлов'
+    #     self.status_log()
+
+    #     return global_dict
         # for i in range(0, len(data) - 1, 2):
         #     key = data[i]
         #     value = data[i + 1]
@@ -223,11 +253,14 @@ class  ParserOld:
         # doc.add_heading('Неструктурированные данные', level=2)
         # doc.add_paragraph(unstructured_data)
 
-        # Добавляем каждый элемент массива данных в документ
-        for item in data:
-            doc.add_paragraph(item)
-        doc.save(f"{self.filePath}/{self.main_directory}/Все данные о закупке №{self.num}.docx")
-        # return data
+        # # # Добавляем каждый элемент массива данных в документ
+            for item in mainMass:
+                doc.add_paragraph(item)
+            doc.save(f"{self.filePath}/{self.main_directory + self.ObjectName}/Все данные о закупке №{self.num}.docx")
+        except Exception:
+            self.status = 'Ошибка записи файлов'
+        # self.status_log()
+        # # return data
 
         
 

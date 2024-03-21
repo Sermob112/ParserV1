@@ -14,6 +14,30 @@ class  Parser:
         self.log_data = []
         pass
 
+    def makeLinkNum(self, numer,filePath):
+        self.filePath = filePath
+    # num = numer
+        try:
+            search_url = f'https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString={numer}&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1'
+            # test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
+            HEADERS_test = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
+                                ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
+            req = requests.get(search_url, headers=HEADERS_test, params=None)
+            src = req.text
+            soup = BeautifulSoup(src, 'lxml')
+            status = 'Успешное подключение'
+            col = soup.find('div', class_ = 'registry-entry__header-mid__number')
+            a_tag = col.find('a')
+            match = re.search(r'noticeInfoId=(\d+)', a_tag['href'])
+            link_text = 'https://zakupki.gov.ru/' + a_tag.get('href')
+            number = match.group(1)
+            self.main_directory = 'Закупка № ' + str(numer) + " "
+            self.num = numer
+            self.agent(numer = number,filePath = filePath,link = link_text)
+            # return  number
+        except:
+            status = 'Ошибка подключения'
     def agent(self, numer, filePath):
         self.num = numer
         self.filePath = filePath
@@ -42,7 +66,7 @@ class  Parser:
         mass = []
         serial_date = {}
         serial_number = self.soup.find(class_="registry-entry__header-mid__number")
-        name = self.soup.find(class_='cardMainInfo__content').get_text().strip().replace('"','').replace('\r','')[:128].replace(' ', '_').replace('\n','')
+        name = self.soup.find(class_='cardMainInfo__content').get_text().strip().replace('"','').replace('\r','')[:60].replace(' ', '_').replace('\n','')
         self.object_name = f' {name}'
         try:
             if serial_number != None:
@@ -380,7 +404,7 @@ class  Parser:
                         luxit = lux.find_all('a')
                         try:
                             for links in luxit:
-                                if 'download'  in links.get('href').lower():
+                                if 'download' in links.get('href') or 'file' in links.get('href'):
                                     linkl = links.get('href')
                                     titk = links.get('title')
                                     files_links[titk] = linkl
@@ -396,7 +420,8 @@ class  Parser:
                                     with open(f'{self.filePath}/{self.main_directory + self.object_name}/{titles}/{title}', "wb") as f:
                                         f.write(response.content)
                                 files_links = {}
-                        except Exception:
+                        except Exception as e:
+                            print(e)
                             if len(files_links) > 0:
                                 # if not os.path.exists(self.main_directory):
                                 # path = os.path.join(self.main_directory, titles)
@@ -721,9 +746,10 @@ class  Parser:
                     substring2 = 'https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?'
                     substring3 = 'https://zakupki.gov.ru/epz/rdik/card/info.html?'
                     link = 'https://zakupki.gov.ru' + j.get('href')
+                    # self.get_result_contracts(num)
                     if substring1 in link:
                         link = link.replace('protocol-main-info.html', 'protocol-docs.html')
-                      
+                        
                         self.get_supplier_docs(link)
                     if substring2 in link:
                         link = link.replace('common-info.html', 'document-info.html')
@@ -763,17 +789,17 @@ class  Parser:
             try:
                 for links in luxit:
                     # href = links.get('href')
-                    if 'download'  in links.get('href'):
+                    if 'download' in links.get('href') or 'file' in links.get('href'):
                             linkl = links.get('href')
                             titk = links.get_text().strip()
                             self.downloader(linkl,title_text)
-                            # response = requests.get(f'{linkl}', headers=self.HEADERS)
-                            # if response.status_code == 200:
-                            #     os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
-                            #     with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
-                            #         f.write(response.content)
-                            # else:
-                            #     print(f"Не удалось скачать файл: {linkl}")
+                            response = requests.get(f'{linkl}', headers=self.HEADERS)
+                            if response.status_code == 200:
+                                os.makedirs(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}', exist_ok=True)   
+                                with open(f'{self.filePath}/{self.main_directory + self.object_name}/{title_text}/{titk}', "wb") as f:
+                                    f.write(response.content)
+                            else:
+                                print(f"Не удалось скачать файл: {linkl}")
             except Exception as e:
                 print(f"Произошла ошибка: {str(e)}")
                 continue
@@ -805,7 +831,7 @@ class  Parser:
                     try:
                         for links in luxit:
                             # href = links.get('href')
-                            if 'download'  in links.get('href'):
+                            if 'download' in links.get('href') or 'file' in links.get('href'):
                                     linkl = links.get('href')
                                     titk = links.get('title')
                                     response = requests.get(f'{linkl}', headers=self.HEADERS)
@@ -834,7 +860,7 @@ class  Parser:
                 try:
                     for links in luxit:
                         # href = links.get('href')
-                        if 'download' in links.get('href'):
+                        if 'download' in links.get('href') or 'file' in links.get('href'):
                                 linkl = links.get('href')
                                 titk = links.get('title')
                                 # file_type_pattern = r'\.\w+'
@@ -867,7 +893,7 @@ class  Parser:
                 try:
                     for links in luxit:
                         # href = links.get('href')
-                        if 'download' in links.get('href'):
+                        if 'download' in links.get('href') or 'file' in links.get('href'):
                                 linkl = links.get('href')
                                 titk = links.get_text()
                                 response = requests.get(f'{linkl}', headers=self.HEADERS)
