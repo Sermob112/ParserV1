@@ -4,10 +4,11 @@ from bs4 import BeautifulSoup
 import requests
 import locale
 import re
-
+from typing import Dict, List, Optional
 import json
 import os
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from docx import Document
 class  Parser:
     def __init__(self):
@@ -25,30 +26,28 @@ class  Parser:
                                 ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
             req = requests.get(search_url, headers=HEADERS_test, params=None)
             src = req.text
+           
             soup = BeautifulSoup(src, 'lxml')
             status = 'Успешное подключение'
             col = soup.find('div', class_ = 'registry-entry__header-mid__number')
             a_tag = col.find('a')
-            match = re.search(r'noticeInfoId=(\d+)', a_tag['href'])
             link_text = 'https://zakupki.gov.ru/' + a_tag.get('href')
-            number = match.group(1)
             self.main_directory = 'Закупка № ' + str(numer) + " "
             self.num = numer
-            self.agent(numer = number,filePath = filePath,link = link_text)
+            self.agent(filePath = filePath,link = link_text)
             # return  number
         except:
             status = 'Ошибка подключения'
-    def agent(self, numer, filePath):
-        self.num = numer
+    def agent(self,  filePath,link):
         self.filePath = filePath
         try:
-            test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
-            test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
+            # test_url3 = f'https://zakupki.gov.ru/epz/order/notice/ok20/view/common-info.html?regNumber={numer}'
+            # test_url2 = f'https://zakupki.gov.ru/epz/order/notice/notice223/common-info.html?noticeInfoId={numer}'
             self.HEADERS = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
                               ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
 
-            req = requests.get(test_url3, headers=self.HEADERS, params=None)
+            req = requests.get(link, headers=self.HEADERS, params=None)
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
@@ -266,107 +265,168 @@ class  Parser:
     #############################################################################################
     #Выподающая страница
     ##############################################################################################
-    def collapse_element(self,soup):
-        i = 0
-        j = 0
-        collaps_titles  = []
-        collaps_main_title_mass = []
-        cont_main_title_mass = []
-        th_mass = []
-        titls_table_main = []
-        collaps_main = []
-        collaps_data = {}
-        conteiner_text = []
+            
+
+    def get_text(self,element) -> str:
+        """Извлекает текст из элемента и очищает его."""
+        return element.get_text().replace('\n', '').replace('\xa0', ' ').strip()
+
+    def parse_collapse_title(self,collapse_element) -> str:
+        """Извлекает заголовок collapse элемента."""
+        title_element = collapse_element.find(class_='collapse__title_text')
+        return self.get_text(title_element) if title_element else ''
+    
+    def parse_block_info(self,block_info_element) -> Dict[str, str]:
+        """Парсит блок информации и возвращает словарь с данными."""
+        data = {}
+        title_element = block_info_element.find(class_='blockInfo__title')
+        if title_element:
+            title = self.get_text(title_element)
+            sections = block_info_element.find_all(class_='section__title')
+            infos = block_info_element.find_all(class_='section__info')
+            for section, info in zip(sections, infos):
+                section_title = self.get_text(section)
+                data[section_title] = self.get_text(info)
+        return data
+    def parse_table(self,table_element) -> Dict[str, List[Dict[str, str]]]:
+        """Парсит таблицу и возвращает словарь с данными."""
         table_data = {}
-        conteiner_titls_data = {}
-        fgh = 0
-        collaps_content = soup.find_all( 'div', class_ = 'blockInfo__collapse collapseInfo')
-        try:
-            if collaps_content != None:
-                for infos in collaps_content:
-                    collaps_title = infos.find( class_ = 'collapse__title_text').get_text()
-                    collaps_title = collaps_title.replace('\n', '').replace('\xa0', ' ')
-                    collaps_titles.append(collaps_title)
-                    content_block_info  = infos.find_all('div', class_="content__block blockInfo")
-                    collaps_data[0] = collaps_title
-                    for item in content_block_info:
+        headers = [self.get_text(th) for th in table_element.find_all('th')]
+        rows = table_element.find_all('tr')
+        for row in rows:
+            cells = row.find_all('td')
+            if cells:
+                row_data = {}
+                for header, cell in zip(headers, cells):
+                    row_data[header] = self.get_text(cell)
+                table_data.setdefault(headers[0], []).append(row_data)
+        return table_data
+    def collapse_element(self, soup: BeautifulSoup) -> Dict[str, Dict]:
+        """Основная функция для парсинга collapse элементов."""
+        collaps_data = {}
+        collaps_content = soup.find_all('div', class_='blockInfo__collapse collapseInfo')
 
-                        block_info_title = item.find( class_ = 'blockInfo__title').get_text()
-                        collaps_titles.append(block_info_title)
-                        block_sec_title = item.find_all(class_='section__title')
-                        for its in block_sec_title:
-                            collaps_main_title_mass.append(its.get_text().replace('\n', ''))
-                        block_sec_info = item.find_all(class_='section__info')
-                        for it in block_sec_info:
-                            # block_sec_info_mass.append(it.get_text().replace('\n', '').replace('\xa0', ' '))
-                            try:
-                                collaps_main.append(
-                                    {collaps_main_title_mass[fgh]: it.get_text().replace('\n', '').replace('\xa0', ' ')})
-                            except IndexError:
-                                collaps_main.append({'': it.get_text().replace('\n', '').replace('\xa0', ' ')})
-                            fgh = fgh +1
+        for collapse in collaps_content:
+            title = self.parse_collapse_title(collapse)
+            if not title:
+                continue
 
-                        collaps_data[block_info_title] = collaps_main
-                        collaps_main = []
-                    #####парсинг таблицы
-                    conteiner_table= infos.find_all('div', class_="container")
-                    if conteiner_table != None:
-                        conteiner_table = infos.find_all('div', class_="container")
+            collaps_data[title] = {}
+            content_blocks = collapse.find_all('div', class_='content__block blockInfo')
+            for block in content_blocks:
+                block_data = self.parse_block_info(block)
+                collaps_data[title].update(block_data)
 
-                        ###################################################
-                        #Парсинг значений таблицы
-                        for tb in conteiner_table:
-                            # может быть несколько тайтлов\ пока только один
-                            row_block_info = tb.find_all(class_ = 'row blockInfo')
-                            for rower in row_block_info:
-                                tit = rower.find(class_ = 'blockInfo__title').get_text().strip()
+            tables = collapse.find_all('table')
+            for table in tables:
+                table_data = self.parse_table(table)
+                collaps_data[title].update(table_data)
 
-                            block_info = tb.find_all(class_='blockInfo__section')
-                            for bs in block_info:
-                                cont_sec_title = bs.find_all(class_='section__title')
-                                for its in cont_sec_title:
-                                    cont_main_title_mass.append(its.get_text().strip().replace('\n', ''))
-                                cont_sec_info = bs.find_all(class_='section__info')
-                                for its in cont_sec_info:
-                                    try:
-                                        titls_table_main.append(
-                                            {cont_main_title_mass[j]: its.get_text().replace('\n', '').replace('\xa0',
-                                                                                                               ' ').strip()})
-                                    except IndexError:
-                                        titls_table_main.append(
-                                            {'': its.get_text().replace('\n', '').replace('\xa0', ' ').strip()})
+        self.status = 'успешный парсинг выпадающих элементов'
+        return collaps_data
+    # def collapse_element(self,soup):
+    #     i = 0
+    #     j = 0
+    #     collaps_titles  = []
+    #     collaps_main_title_mass = []
+    #     cont_main_title_mass = []
+    #     th_mass = []
+    #     titls_table_main = []
+    #     collaps_main = []
+    #     collaps_data = {}
+    #     conteiner_text = []
+    #     table_data = {}
+    #     conteiner_titls_data = {}
+    #     fgh = 0
+    #     collaps_content = soup.find_all( 'div', class_ = 'blockInfo__collapse collapseInfo')
+    #     try:
+    #         if collaps_content != None:
+    #             for infos in collaps_content:
+    #                 collaps_title = infos.find( class_ = 'collapse__title_text').get_text()
+    #                 collaps_title = collaps_title.replace('\n', '').replace('\xa0', ' ')
+    #                 collaps_titles.append(collaps_title)
+    #                 content_block_info  = infos.find_all('div', class_="content__block blockInfo")
+    #                 collaps_data[0] = collaps_title
+    #                 for item in content_block_info:
 
-                                    j = j + 1
-                                conteiner_titls_data[tit] = titls_table_main
-                            t = j
-                            #Поиск всех элементов таблицы
-                            tablos = tb.find_all('table')
-                            for tbn in tablos:
-                                c_th = tbn.find_all('th')
-                                for th_items in c_th:
-                                    th_text = th_items.get_text().strip()
-                                    th_mass.append(th_text)
+    #                     block_info_title = item.find( class_ = 'blockInfo__title').get_text()
+    #                     collaps_titles.append(block_info_title)
+    #                     block_sec_title = item.find_all(class_='section__title')
+    #                     for its in block_sec_title:
+    #                         collaps_main_title_mass.append(its.get_text().replace('\n', ''))
+    #                     block_sec_info = item.find_all(class_='section__info')
+    #                     for it in block_sec_info:
+    #                         # block_sec_info_mass.append(it.get_text().replace('\n', '').replace('\xa0', ' '))
+    #                         try:
+    #                             collaps_main.append(
+    #                                 {collaps_main_title_mass[fgh]: it.get_text().replace('\n', '').replace('\xa0', ' ')})
+    #                         except IndexError:
+    #                             collaps_main.append({'': it.get_text().replace('\n', '').replace('\xa0', ' ')})
+    #                         fgh = fgh +1
 
-                                c_td = tbn.find_all('td')
-                                for td_items in c_td:
-                                    td_text = td_items.get_text().strip()
-                                    try:
-                                        conteiner_text.append({th_mass[i]: td_text})
-                                    except Exception:
-                                        i = 0
-                                        conteiner_text.append({'': td_text})
-                                    i += 1
+    #                     collaps_data[block_info_title] = collaps_main
+    #                     collaps_main = []
+    #                 #####парсинг таблицы
+    #                 conteiner_table= infos.find_all('div', class_="container")
+    #                 if conteiner_table != None:
+    #                     conteiner_table = infos.find_all('div', class_="container")
 
-                                table_data[cont_main_title_mass[t]] = conteiner_text
-                                t = t + 1
-                                conteiner_text = []
-                collaps_data.update(conteiner_titls_data)
-                collaps_data.update(table_data)
+    #                     ###################################################
+    #                     #Парсинг значений таблицы
+    #                     for tb in conteiner_table:
+    #                         # может быть несколько тайтлов\ пока только один
+    #                         row_block_info = tb.find_all(class_ = 'row blockInfo')
+    #                         for rower in row_block_info:
+    #                             tit = rower.find(class_ = 'blockInfo__title').get_text().strip()
 
-            self.status = 'успешный парсинг выпадающих элементов'
-            return collaps_data
-        except Exception:
-            self.status = 'Произошла ошибка с парсингом Выпадающих элементов'
+    #                         block_info = tb.find_all(class_='blockInfo__section')
+    #                         for bs in block_info:
+    #                             cont_sec_title = bs.find_all(class_='section__title')
+    #                             for its in cont_sec_title:
+    #                                 cont_main_title_mass.append(its.get_text().strip().replace('\n', ''))
+    #                             cont_sec_info = bs.find_all(class_='section__info')
+    #                             for its in cont_sec_info:
+    #                                 try:
+    #                                     titls_table_main.append(
+    #                                         {cont_main_title_mass[j]: its.get_text().replace('\n', '').replace('\xa0',
+    #                                                                                                            ' ').strip()})
+    #                                 except IndexError:
+    #                                     titls_table_main.append(
+    #                                         {'': its.get_text().replace('\n', '').replace('\xa0', ' ').strip()})
+
+    #                                 j = j + 1
+    #                             conteiner_titls_data[tit] = titls_table_main
+    #                         t = j
+    #                         #Поиск всех элементов таблицы
+    #                         tablos = tb.find_all('table')
+    #                         for tbn in tablos:
+    #                             c_th = tbn.find_all('th')
+    #                             for th_items in c_th:
+    #                                 th_text = th_items.get_text().strip()
+    #                                 th_mass.append(th_text)
+
+    #                             c_td = tbn.find_all('td')
+    #                             for td_items in c_td:
+    #                                 td_text = td_items.get_text().strip()
+    #                                 try:
+    #                                     conteiner_text.append({th_mass[i]: td_text})
+    #                                 except Exception:
+    #                                     i = 0
+    #                                     conteiner_text.append({'': td_text})
+    #                                 i += 1
+
+    #                             table_data[cont_main_title_mass[t]] = conteiner_text
+    #                             t = t + 1
+    #                             conteiner_text = []
+    #             collaps_data.update(conteiner_titls_data)
+    #             collaps_data.update(table_data)
+
+    #         self.status = 'успешный парсинг выпадающих элементов'
+    #         return collaps_data
+    #     except Exception as e:
+    #         print(e)
+    #         return collaps_data
+    #         self.status = 'Произошла ошибка с парсингом Выпадающих элементов'
 
 
 
@@ -484,23 +544,28 @@ class  Parser:
         return data
 
 
-    def journal_of_events(self,link):
-
+    def journal_of_events(self, link):
         th_mass = []
         data = []
-        fn_date= {}
+        fn_date = {}
         i = 0
-        driver = webdriver.Chrome()
+
+        # Настройка опций для Chrome
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Включаем headless-режим
+        chrome_options.add_argument("--disable-gpu")  # Отключаем GPU, чтобы избежать предупреждений
+        chrome_options.add_argument("--window-size=1920,1080")  # Устанавливаем размер окна
+
+        # Инициализация драйвера с опциями
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(link)
-        import time
-        time.sleep(0)
+
         html = driver.page_source
+        driver.quit()
 
         soup = BeautifulSoup(html, 'lxml')
+        wrapper = soup.find_all(class_='table mb-0 displaytagTable')
 
-        driver.quit()
-        wrapper = soup.find_all( class_='table mb-0 displaytagTable')
-        #не нашел журнал событий
         try:
             for tbn in wrapper:
                 c_th = tbn.find_all('th')
@@ -521,7 +586,7 @@ class  Parser:
             return data
 
         except Exception:
-            self.status = 'Ошибка парснига  Журнала'
+            self.status = 'Ошибка парсинга Журнала'
 
     def supplier_result(self, link):
         block_title = []
@@ -537,10 +602,14 @@ class  Parser:
         n = 0
         # row_info = soup.find_all(class_= 'row blockInfo')
         # for info in row_info:
-        driver = webdriver.Chrome()
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Включаем headless-режим
+        chrome_options.add_argument("--disable-gpu")  # Отключаем GPU, чтобы избежать предупреждений
+        chrome_options.add_argument("--window-size=1920,1080")  # Устанавливаем размер окна
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(link)
         import time
-        time.sleep(0)
+        time.sleep(1)
         html = driver.page_source
 
         soup = BeautifulSoup(html, 'lxml')
@@ -669,8 +738,8 @@ class  Parser:
                 elif title == 'Документы':
                     data[title] = self.documents(soup)
                 elif title == 'Результаты определения поставщика (подрядчика, исполнителя)':
-                    # data[title] = self.supplier_result(link)
-                    self.supplier_docs()   
+                    data[title] = self.supplier_result(link)
+                    self.get_supplier_docs()   
                 # elif len(self.journal_of_events(link))> 0:
                 elif title == 'Журнал событий':
                     data[title] = self.journal_of_events(link)
@@ -680,56 +749,6 @@ class  Parser:
                print(f"Ошибка в этой части {title}")
 
         return data
-
-
-    
-
-        
-
-
-    def GetAllDocks(self):
-        data = {}
-        i = 0
-        # HEADERS = {
-        #         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0'
-        #                         ' YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36', 'accept': '*/*'}
-        linkers = self.all_link()
-
-        for title, link in linkers.items():
-            test = 0
-            # req = requests.get(url=link, headers=self.HEADERS)
-            # src = req.text
-            # soup = BeautifulSoup(src, "lxml")
-            try:
-                # def docs():
-                #     data[title] = self.documents(soup)
-                # def jorns():
-                #     data[title] = self.journal_of_events(link)
-                #
-                # options = {
-                #     'Документы': docs(),
-                #     'Журнал событий': jorns()
-                #
-                # }
-                # options.get(title)()
-
-                # if len(self.main_info_body(soup)) < 0:
-                #     data[title] = self.main_info_body(soup)
-                # elif title == 'Документы':
-                #     data[title] = self.documents(soup)
-                if title == 'Результаты определения поставщика':
-                    # data[title] = self.supplier_result(link)
-                    test = self.get_supplier_docs(link)
-                # elif len(self.journal_of_events(link))> 0:
-                # elif title == 'Журнал событий':
-                #     data[title] = self.journal_of_events(link)
-                else:
-                    pass
-            except Exception:
-                print(f"Ошибка в этой части {title}")
-
-        # return data
-        return test
 
     def get_supplier_links(self,num):
         link_mass = []
@@ -760,21 +779,6 @@ class  Parser:
                     link_mass.append(link)
                 except:
                     continue
-        # if  link_mass:
-        #     for i in link_mass:
-        #         try:
-        #             self.get_electronic_documents(i)
-        #         except Exception as e3:
-        #             print(f'Ошибка в self.get_electronic_documents для {i}: {e3}')
-        #             # Если нужно прервать выполнение после всех ошибок
-        #             continue
-                
-
-        # linkl = 'https://zakupki.gov.ru/' + links.get('href')
-        # link_element = soup.find_all('a')
-        # if link_element:
-        #     link = link_element.get('href')
-        #     link_mass.append(link)
         return link_mass
     
     def get_supplier_docs(self, link):
@@ -942,8 +946,6 @@ class  Parser:
         global_dict = {}
         global_dict.update(self.parse_head())
         self.status_log()
-
-       
         global_dict.update(self.main_info_body(self.soup))
         self.status_log()
         global_dict.update(self.collapse_element(self.soup))

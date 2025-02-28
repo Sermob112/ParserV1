@@ -8,8 +8,9 @@ import re
 import json
 import os
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from docx import Document
-
+from ParserAgreement import AgreementParser
 class  ParserOld:
     def __init__(self):
         pass
@@ -106,6 +107,8 @@ class  ParserOld:
         mainMass = []
         newmainMass = []
         JornalMass = []
+        DockMass = []
+        AgreMass = []
         tabs_of_links = self.get_links()
         for title, link in tabs_of_links.items():
             req = requests.get(url=link, headers=self.HEADERS)
@@ -113,8 +116,10 @@ class  ParserOld:
             soup = BeautifulSoup(src, "lxml")
             if title == 'Журнал событий':
                 JornalMass = self.get_jornals(link)
+            if title == 'Сведения о договорах':
+                AgreMass = self.get_agreements(link)
             if title == 'Документы':
-                JornalMass = self.get_documents(link)
+                DockMass = self.get_documents(link)
             try:
                 
                 containerMain = soup.find_all(class_='card-common-content')
@@ -139,14 +144,68 @@ class  ParserOld:
                 print('Error')
         mainMass.append(newmainMass)
         mainMass.append(JornalMass)
+        mainMass.append(DockMass)
+        mainMass.append(AgreMass)
         return mainMass
     
+    def get_agreements(self, link):
+        req = requests.get(link, headers=self.HEADERS, params=None)
+        src = req.text
+        soup = BeautifulSoup(src, 'lxml')
+        
+        # Проверяем, есть ли сообщение "Сведения отсутствуют"
+        no_data_message = soup.find('div', class_='section__title', text='Сведения отсутствуют')
+        if no_data_message:
+            return ["Сведения отсутствуют"]  # Добавляем сообщение в массив
+
+        # Ищем таблицу с договорами
+        table = soup.find('table', class_='table')
+        if table:
+            rows = table.find_all('tr')
+            agreements = []
+            for row in rows[1:]:  # Пропускаем заголовок таблицы
+                cols = row.find_all('td')
+                if len(cols) >= 4:
+                    # Ищем все ссылки в первом столбце
+                    links = cols[0].find_all('a', href=True)
+                    
+                    # Ищем последнюю ссылку, содержащую "contract-info"
+                    self.contract_info_link = None
+                    for link in links:
+                        if 'contract-info' in link['href']:
+                            self.contract_info_link = link['href']
+                    
+                    # Если найдена ссылка, добавляем её в массив
+                
+                    agreement_text = cols[0].get_text(strip=True)
+                    agreement_revision = cols[1].get_text(strip=True)
+                    agreement_status = cols[2].get_text(strip=True)
+                    agreement_date = cols[3].get_text(strip=True)
+
+              
+                    agreements.append(f"Текст: {agreement_text}")
+                    agreements.append(f"Редакция: {agreement_revision}")
+                    agreements.append(f"Статус: {agreement_status}")
+                    agreements.append(f"Дата: {agreement_date}")
+                    agreements.append("\n")  # Добавляем пустую строку для разделения
+            try:
+                link = "https://zakupki.gov.ru" + self.contract_info_link
+                par_agreement = AgreementParser(link)
+                par_agreement.start_contract_parser(file_path=f"{self.filePath}/{self.main_directory + self.ObjectName}")
+            except Exception as E:
+                print(E)
+            return agreements
+        else:
+            return ["Таблица с договорами не найдена"]
+
     def get_jornals(self, link):
         JornalMass= []
-        driver = webdriver.Chrome()
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Включаем headless-режим
+        chrome_options.add_argument("--disable-gpu")  # Отключаем GPU, чтобы избежать предупреждений
+        chrome_options.add_argument("--window-size=1920,1080")  # Устанавливаем размер окна
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(link)
-        import time
-        time.sleep(0)
         html = driver.page_source
         soup = BeautifulSoup(html, 'lxml')
         driver.quit()
@@ -186,11 +245,9 @@ class  ParserOld:
                                     # linkMass.append(linkl)
                                     response = requests.get(f'https://zakupki.gov.ru{linkl}', headers=self.HEADERS)
                                     if response.status_code == 200:
-                                        # path = os.path.join(self.main_directory, text)
-                                        # os.makedirs(path)
-                                        # Создаем каталог для сохранения файлов, если его нет
+
                                         os.makedirs(f'{self.filePath}/{self.main_directory + self.ObjectName}/{title_text}', exist_ok=True)
-                                        # Сохраняем файл в указанный каталог
+                                     
                                         with open(f'{self.filePath}/{self.main_directory + self.ObjectName}/{title_text}/{text}', "wb") as f:
                                             f.write(response.content)
                                     else:
@@ -199,61 +256,11 @@ class  ParserOld:
                         print(f"Произошла ошибка: {str(e)}")
 
     def makeDoc(self):
-        global_dict = {}
-        # global_dict.update(self.parse_head())
-        # global_dict.update(self.mainInfo())
-        # headMass = self.parse_head()
+        # global_dict = {}
         mainMass= self.mainInfo()
-        # doc = Document()
-        # data = headMass + mainMass
-        # structured_data = {}
-        # print(mainMass)
         try:
             doc = Document()
-            # for item in global_dict:
-            #     doc.add_paragraph(item)
-            # doc.save(f"{self.main_directory}/Все данные о закупке №{self.num}.docx")
-            # Добавляем заголовок
             doc.add_heading('Данные о закупке', level=1)
-
-    # # Перебираем данные и добавляем их в документ
-    #         for key, value in global_dict.items():
-    #             doc.add_heading(key, level=2)
-    #             if isinstance(value, list):
-    #                 for item in value:
-    #                     if isinstance(item, dict):
-    #                         for sub_key, sub_value in item.items():
-    #                             doc.add_paragraph(f'{sub_key}: {sub_value}')
-    #                     else:
-    #                         doc.add_paragraph(str(item))
-    #             else:
-    #                 doc.add_paragraph(str(value))
-    #         doc.save(f"{self.filePath}/{self.main_directory}/Все данные о закупке №{self.num}.docx")
-    #         self.status = 'Успешная запись файлов'
-    #     except Exception:
-    #         self.status = 'Ошибка записи файлов'
-    #     self.status_log()
-
-    #     return global_dict
-        # for i in range(0, len(data) - 1, 2):
-        #     key = data[i]
-        #     value = data[i + 1]
-        #     structured_data[key] = value
-
-     
-        # if len(data) % 2 != 0:
-        #     unstructured_data = data[-1]
-
-        # doc.add_heading('Данные о закупке', level=1)
-
-        
-        # for key, value in structured_data.items():
-        #     doc.add_paragraph(f'{key}: {value}')
-
-        # doc.add_heading('Неструктурированные данные', level=2)
-        # doc.add_paragraph(unstructured_data)
-
-        # # # Добавляем каждый элемент массива данных в документ
             for item in mainMass:
                 doc.add_paragraph(item)
             doc.save(f"{self.filePath}/{self.main_directory + self.ObjectName}/Все данные о закупке №{self.num}.docx")
