@@ -10,6 +10,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from docx import Document
+from contract_parser import ContractParser
 class  Parser:
     def __init__(self):
         self.log_data = []
@@ -771,7 +772,8 @@ class  Parser:
                         
                         self.get_supplier_docs(link)
                     if substring2 in link:
-                        contract_parser = contractParser(link)
+                        contract_parser = ContractParser(link)
+                        contract_parser.start(f"{self.filePath}/{self.main_directory + self.object_name}")
                         link = link.replace('common-info.html', 'document-info.html')
                         self.get_contract_details(link)
                     if substring3 in link:
