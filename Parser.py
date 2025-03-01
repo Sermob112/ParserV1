@@ -771,6 +771,7 @@ class  Parser:
                         
                         self.get_supplier_docs(link)
                     if substring2 in link:
+                        contract_parser = contractParser(link)
                         link = link.replace('common-info.html', 'document-info.html')
                         self.get_contract_details(link)
                     if substring3 in link:
