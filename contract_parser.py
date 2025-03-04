@@ -145,6 +145,17 @@ class ContractParser:
         if len(containers) > 4:  # Нас интересуют контейнеры, начиная с 5-го
             for container in containers[4:]:
                 self._parse_general_info(container, data)
+
+    def event_information(self,link):
+        self.driver.get(link)
+        soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+        data = {}
+        containers = soup.find_all('div', class_='container')
+        if len(containers) > 4:  # Нас интересуют контейнеры, начиная с 5-го
+            for container in containers[4:]:
+                print(container)
+                self._parse_general_info(container, data)
+                
                          
         return data
     def _parse_general_info(self, container, data):
@@ -464,25 +475,28 @@ class ContractParser:
             self.save_to_docx(global_data, f"{filename}/Все данные по договору {self.contract_num}.docx")
         finally:
            self.close()
-# if __name__ == "__main__":
-#     parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")
-#     global_data = {}
-#     links = parser.parse_links()
-#     base_url = list(links.values())[0]  
-#     base_title = list(links.keys())[0]
-#     payment_url =  list(links.values())[1]  
-#     payment_title =  list(links.keys())[1] 
-#     executor_url =  list(links.values())[2]  
-#     executor_title =  list(links.keys())[2] 
-#     inserts_url =  list(links.values())[3]  
-#     inserts_title =  list(links.keys())[3]
-#     jurnal_url =  list(links.values())[4]  
-#     jurnal_title =  list(links.keys())[4]     
-#     global_data[base_title] = parser.base_information(base_url)
-#     global_data[payment_title] = parser.payment_information(payment_url)
-#     global_data[executor_title] = parser.executor_information(executor_url)
-#     # global_data[inserts_title] = parser.inserte_information(inserts_url)
-#     global_data[jurnal_title] = parser.jornal_information(jurnal_url)
-#     parser.save_to_docx(global_data)
-#     # print(global_data)
-# #     # data = {}
+if __name__ == "__main__":
+    parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")
+    global_data = {}
+    links = parser.parse_links()
+    base_url = list(links.values())[0]  
+    base_title = list(links.keys())[0]
+    payment_url =  list(links.values())[1]  
+    payment_title =  list(links.keys())[1] 
+    executor_url =  list(links.values())[2]  
+    executor_title =  list(links.keys())[2] 
+    inserts_url =  list(links.values())[3]  
+    inserts_title =  list(links.keys())[3]
+    jurnal_url =  list(links.values())[4]  
+    jurnal_title =  list(links.keys())[4]
+    event_url =  list(links.values())[5]  
+    event_title =  list(links.keys())[5]        
+    global_data[base_title] = parser.base_information(base_url)
+    global_data[payment_title] = parser.payment_information(payment_url)
+    global_data[executor_title] = parser.executor_information(executor_url)
+    # global_data[inserts_title] = parser.inserte_information(inserts_url)
+    global_data[jurnal_title] = parser.jornal_information(jurnal_url)
+    global_data[event_title] = parser.event_information(event_url)
+    parser.save_to_docx(global_data)
+    # print(global_data)
+#     # data = {}

@@ -226,7 +226,9 @@ class AgreementParser:
         if event_table:
             event_data = self._parse_event_table(event_table)
             if event_data:
-                data['Журнал событий']['События'] = event_data
+                if 'Журнал событий' not in data:
+                    data['Журнал событий'] = {}
+                    data['Журнал событий']['События'] = event_data
 
         total_sum_element = container.find('div', class_='row header-grey-light pt-4 pb-4 b-bottom')
         if total_sum_element:
@@ -328,7 +330,7 @@ class AgreementParser:
         return text
  
 
-    def save_to_docx(self, data, filename):
+    def save_to_docx(self, data, filename = "test.docx"):
         """
         Сохраняет данные в формате .docx.
 
@@ -427,7 +429,7 @@ class AgreementParser:
 # if __name__ == "__main__":
 #     parser = AgreementParser("https://zakupki.gov.ru/epz/contractfz223/card/contract-info.html?id=21555118")
 #     parser.start_contract_parser("Test")
-#     # data = {}
+    # data = {}
     # try:
     #     # Получаем все ссылки
     #     links = parser.parse_links()
@@ -438,10 +440,10 @@ class AgreementParser:
     #         third_link_url, third_link_text = links[2]
     #         four_link_url,four_link_text = links[3]
     #         data[first_link_text] = parser.parse_first_level(first_link_url)
-    #         # print(f"Парсим вторую ссылку: {first_link_text} ({first_link_url})")
     #         data[second_link_text] = parser.parse_second_level(second_link_url)
     #         data[third_link_text] = parser.parse_third_level(third_link_url)
     #         data[four_link_text] = parser.parse_four_level(four_link_url)
-    #         print(data)  # Выводим результат
+    #         parser.save_to_docx(data)
+            # print(data)  # Выводим результат
     # finally:
     #     parser.close()
