@@ -17,7 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QLabel, QLineEdit, QMainWindow,
     QMenuBar, QPushButton, QSizePolicy, QStatusBar,
-    QTextBrowser, QWidget)
+    QTextBrowser, QTextEdit, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -33,13 +33,26 @@ class Ui_MainWindow(object):
         self.Parse_but.setObjectName(u"Parse_but")
         self.Parse_but.setGeometry(QRect(30, 240, 171, 61))
         self.Parse_but.setStyleSheet(u"font: 14pt \"Impact\";")
+        self.Lab = QLabel(self.centralwidget)
+        self.Lab.setObjectName(u"Lab")
+        self.Lab.setGeometry(QRect(30, 440, 331, 51))
+        self.Lab.setStyleSheet(u"\n"
+"border-color: rgb(0, 0, 0);\n"
+"border-color: rgb(0, 255, 0);\n"
+"font: 14pt \"Times New Roman\";\n"
+"")
+        self.Insert_text = QTextEdit(self.centralwidget)
+        self.Insert_text.setObjectName(u"Insert_text")
+        self.Insert_text.setGeometry(QRect(30, 500, 331, 51))
+        self.Insert_text.setStyleSheet(u"\n"
+"font: 75 14pt \"Times New Roman\";")
         self.textBrowser = QTextBrowser(self.centralwidget)
         self.textBrowser.setObjectName(u"textBrowser")
-        self.textBrowser.setGeometry(QRect(220, 240, 511, 311))
+        self.textBrowser.setGeometry(QRect(440, 270, 291, 281))
         self.textBrowser.setStyleSheet(u"font: 10pt \"Impact\";")
         self.label = QLabel(self.centralwidget)
         self.label.setObjectName(u"label")
-        self.label.setGeometry(QRect(220, 200, 151, 31))
+        self.label.setGeometry(QRect(450, 230, 31, 31))
         self.label.setStyleSheet(u"font: 14pt \"Impact\";")
         self.FilePathIn = QLineEdit(self.centralwidget)
         self.FilePathIn.setObjectName(u"FilePathIn")
@@ -74,7 +87,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Parser 0.1b", None))
         self.Parse_but.setText(QCoreApplication.translate("MainWindow", u"\u041f\u0430\u0440\u0441\u0438\u0442\u044c", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"\u0416\u0443\u0440\u043d\u0430\u043b \u0441\u043e\u0431\u044b\u0442\u0438\u0439", None))
+        self.Lab.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043d\u043e\u043c\u0435\u0440 \u0437\u0430\u043a\u0443\u043f\u043a\u0438", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"\u041b\u043e\u0433", None))
         self.InputFileBut.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0444\u0430\u0439\u043b", None))
         self.OutPutFileBut.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0432", None))
     # retranslateUi

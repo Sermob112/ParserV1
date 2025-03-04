@@ -378,79 +378,69 @@ class ContractParser:
                 attachments_list.append(attachment_data)
 
         return attachments_list
-    def save_to_docx(self, data, filename = "data.docx"):
+    def save_to_docx(self, data, filename="data.docx"):
         """
         Сохраняет данные в формате .docx.
 
         :param data: Словарь с данными для сохранения.
         :param filename: Имя файла для сохранения.
         """
-
         doc = Document()
         doc.add_heading('Данные договора', level=1)
 
-        for level_name, level_data in data.items():
-      
-            doc.add_heading(level_name, level=2)
-
-
-            for key, value in level_data.items():
-                if isinstance(value, dict):
-              
-                    doc.add_heading(key, level=3)
-                    for sub_key, sub_value in value.items():
-                        if isinstance(sub_value, dict):
-                           
-                            doc.add_heading(sub_key, level=4)
-                            self._add_table_to_doc(doc, sub_value)
-                        elif isinstance(sub_value, list):
-                    
-                            doc.add_heading(sub_key, level=4)
-                            self._add_table_to_doc(doc, sub_value)
-                        else:
-                            # Иначе добавляем как текст
-                            doc.add_paragraph(f"{sub_key}: {sub_value}")
-                elif isinstance(value, list):
-                    # Если значение — это список, добавляем его как таблицу
-                    doc.add_heading(key, level=3)
-                    self._add_table_to_doc(doc, value)
-                else:
-                    # Иначе добавляем как текст
-                    doc.add_paragraph(f"{key}: {value}")
+        self._add_data_to_doc(doc, data, level=2)
 
         # Сохраняем документ
         doc.save(filename)
 
+    def _add_data_to_doc(self, doc, data, level):
+        """
+        Рекурсивно добавляет данные в документ.
+
+        :param doc: Объект документа.
+        :param data: Данные для добавления.
+        :param level: Уровень заголовка.
+        """
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, (dict, list)):
+                    doc.add_heading(key, level=level)
+                    self._add_data_to_doc(doc, value, level + 1)
+                else:
+                    doc.add_paragraph(f"{key}: {value}")
+        elif isinstance(data, list):
+            if all(isinstance(item, dict) for item in data):
+                self._add_table_to_doc(doc, data)
+            else:
+                for item in data:
+                    self._add_data_to_doc(doc, item, level)
+        else:
+            doc.add_paragraph(str(data))
+
     def _add_table_to_doc(self, doc, data):
         """
         Добавляет таблицу в документ, если данные являются списком словарей.
-        Если данные не являются списком словарей, добавляет их как текст.
 
         :param doc: Объект документа.
         :param data: Данные для таблицы.
         """
-        if isinstance(data, list) and all(isinstance(row, dict) for row in data):
-            # Если данные — это список словарей, создаем таблицу
-            if not data:
-                return
+        if not data:
+            return
 
-            # Создаем таблицу
-            table = doc.add_table(rows=1, cols=len(data[0]))
-            table.style = 'Table Grid'
+        # Создаем таблицу
+        table = doc.add_table(rows=1, cols=len(data[0]))
+        table.style = 'Table Grid'
 
-            # Добавляем заголовки таблицы
-            hdr_cells = table.rows[0].cells
-            for i, key in enumerate(data[0].keys()):
-                hdr_cells[i].text = key
+        # Добавляем заголовки таблицы
+        hdr_cells = table.rows[0].cells
+        for i, key in enumerate(data[0].keys()):
+            hdr_cells[i].text = key
 
-            # Добавляем строки таблицы
-            for row in data:
-                row_cells = table.add_row().cells
-                for i, value in enumerate(row.values()):
-                    row_cells[i].text = str(value)
-        else:
-            # Если данные не являются списком словарей, добавляем их как текст
-            doc.add_paragraph(str(data))
+        # Добавляем строки таблицы
+        for row in data:
+            row_cells = table.add_row().cells
+            for i, value in enumerate(row.values()):
+                row_cells[i].text = str(value)
 
     def start(self, filename):
         global_data = {}
@@ -495,4 +485,4 @@ class ContractParser:
 #     global_data[jurnal_title] = parser.jornal_information(jurnal_url)
 #     parser.save_to_docx(global_data)
 #     # print(global_data)
-#     # data = {}
+# #     # data = {}
