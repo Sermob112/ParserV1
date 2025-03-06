@@ -2,9 +2,11 @@
 from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from ui_mainwindow import Ui_MainWindow  # Import the generated UI module
 import sys
-
+import chardet
 soup = 0
 from Parser import *
+from parserR import ParserR
+from ParserOldR import ParserOldR
 from ParserOld import * 
 
 # mass =[ '0187300008423000152', '32110777875', '31704661640', '0117300097419000068', '0373100119818000003', '32008888078', '32110426361', '32110477999', '31908469331', '32110029893', '32312158319', '31300488760', '32110367790', '32009406308', '32009437611', '31604137673', '0373100119819000002', '32211175016', '32009421024', '31908334236', '32009460975', '32009607869', '32110591447', '31400906460', '31908274538', '32110352094', '32110356078', '32110800848', '0373100119819000003', '0851200000614006593', '0851200000614007131', '31603437437', '0373100000217000017', '0373100000217000019', '31705500831', '32009550449', '32009587229', '32110153394', '31908156631', '31705391673', '32110917171', '32110874792', '32009739366', '31807313750', '0345100003720000059', '0345100003720000047', '0345100003720000060', '0345100003720000048', '32211175094', '31806053544', '31603963840', '0365300000815000001', '32009300287', '0335100005614000007', '32008872983', '31603945673', '32110690659', '31705347862', '31907553468', '32009421007', '31705541885', '32009045774', '32009003588', '32110431555', '32110383587', '32110007769', '31704658625', '31300363122', '31300719936', '31401554400', '31401722622', '31502949391', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009517000196', '0173100009516000302', '0173100009516000302', '0173100009516000302', '0173100009516000302', '0173100009516000302', '0173100009516000302', '0173100009516000306', '0173100009516000306', '0173100009516000306', '0173100009516000306', '0173100009516000306', '31502351607', '31502351607', '31806162433', '31806162433', '31401414099', '31401414099', '31503084624', '31503084624', '31503084624', '31503084624', '31503084624', '31503084624', '31502441989', '31502441989', '31300725659', '31300725659', '31300725659', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105598', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31502105596', '31603501055', '31603501055', '31603501055', '31603501055', '31603501055', '31603501055', '31603314524', '31603314524', '31603314524', '31603314524', '31603314524', '31603314524', '31806205504', '31806205504']
@@ -36,25 +38,30 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         # self.new_win_but.clicked.connect(self.new_win)
 
     def test(self):
-        par = Parser()
-        parOld = ParserOld()
+
+        parR = ParserR(self.file_name)
+        
+        parOld = ParserOldR()
         if hasattr(self, 'mass') and self.mass is not None:
             for i in self.mass:
                 try:
-                    par.makeLinkNum(i, self.folder_path_out)
-                    par.parse_head()
-                    par.documents(i)
-                    par.get_supplier_links(i)
-                    par.get_result_contracts(i)
-                    # par.Make_Json()
-                    par.Make_Dock(i)
-                    # tr = par.status_log()
-                    # self.textBrowser.append(tr )
+                   
+                    parR.make_link_num(i, self.folder_path_out)
+                    parR.parse_head()
+                    parR.get_supplier_links(i)
+                    parR.documents(i)
+                    parR.get_result_contracts(i)
+                    parR.Make_Dock(i)
+
+                    # parOld.make_link_num(i, self.folder_path_out)
+                    # parOld.parse_head()
+                    # parOld.make_doc()
+
                 except Exception as e:
                     try:
-                        parOld.makeLinkNum(i, self.folder_path_out)
+                        parOld.make_link_num(i, self.folder_path_out)
                         parOld.parse_head()
-                        parOld.makeDoc()
+                        parOld.make_doc()
                         # self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")
                     except Exception as e:
                         self.textBrowser.append(f"Не получилось спарсить элемент {i}: {e}")
@@ -68,10 +75,11 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
     def open_file_dialog(self):
         file_dialog = QFileDialog()
         options = file_dialog.options()
-        file_name, _ = file_dialog.getOpenFileName(self, "Выберите файл", "", "All Files (*);;Text Files (*.csv)", options=options)
-        if file_name:
-            self.FilePathIn.setText(file_name)
-            self.mass = self.make_mass(file_name)
+        self.file_name, _ = file_dialog.getOpenFileName(self, "Выберите файл", "", "All Files (*);;Text Files (*.csv)", options=options)
+      
+        if self.file_name:
+            self.FilePathIn.setText(self.file_name)
+            self.mass = self.make_mass(self.file_name)
 
     def open_file_dialog_to_load(self):
         file_dialog = QFileDialog()
@@ -79,6 +87,11 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         self.folder_path_out = file_dialog.getExistingDirectory(self, "Выберите папку", options=options)
         if self.folder_path_out:
             self.FilePathOut.setText(self.folder_path_out)
+    def detect_encoding(self,file_path):
+        with open(file_path, 'rb') as file:
+            raw_data = file.read()
+            result = chardet.detect(raw_data)
+            return result['encoding']
 
     def make_mass(self, csv_filename):
         data_from_second_column = []

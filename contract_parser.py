@@ -8,7 +8,10 @@ from typing import Dict, List, Optional
 import json
 import os
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from docx import Document
 
 
@@ -148,16 +151,26 @@ class ContractParser:
 
     def event_information(self,link):
         self.driver.get(link)
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_all_elements_located((By.CLASS_NAME, 'container'))
+            )
+        except Exception as e:
+            print("Ошибка ожидания загрузки:", e)
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
         data = {}
+        self.data = {}
+       
         containers = soup.find_all('div', class_='container')
         if len(containers) > 4:  # Нас интересуют контейнеры, начиная с 5-го
             for container in containers[4:]:
-                print(container)
                 self._parse_general_info(container, data)
-                
-                         
+        self.data = data
         return data
+    
+    def get_event_data(self):
+        """Геттер для получения данных"""
+        return self.data
     def _parse_general_info(self, container, data):
         # Извлекаем заголовок блока (например, "Общая информация")      
         block_title = container.find('h2', class_='blockInfo__title')
@@ -466,37 +479,40 @@ class ContractParser:
             inserts_url =  list(links.values())[3]  
             inserts_title =  list(links.keys())[3]
             jurnal_url =  list(links.values())[4]  
-            jurnal_title =  list(links.keys())[4]     
+            jurnal_title =  list(links.keys())[4]
+            event_url =  list(links.values())[5]  
+            event_title =  list(links.keys())[5]       
             global_data[base_title] = self.base_information(base_url)
             global_data[payment_title] = self.payment_information(payment_url)
             global_data[executor_title] = self.executor_information(executor_url)
             # global_data[inserts_title] = parser.inserte_information(inserts_url)
             global_data[jurnal_title] = self.jornal_information(jurnal_url)
+            global_data[event_title] = self.event_information(event_url)
             self.save_to_docx(global_data, f"{filename}/Все данные по договору {self.contract_num}.docx")
-        finally:
-           self.close()
-if __name__ == "__main__":
-    parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")
-    global_data = {}
-    links = parser.parse_links()
-    base_url = list(links.values())[0]  
-    base_title = list(links.keys())[0]
-    payment_url =  list(links.values())[1]  
-    payment_title =  list(links.keys())[1] 
-    executor_url =  list(links.values())[2]  
-    executor_title =  list(links.keys())[2] 
-    inserts_url =  list(links.values())[3]  
-    inserts_title =  list(links.keys())[3]
-    jurnal_url =  list(links.values())[4]  
-    jurnal_title =  list(links.keys())[4]
-    event_url =  list(links.values())[5]  
-    event_title =  list(links.keys())[5]        
-    global_data[base_title] = parser.base_information(base_url)
-    global_data[payment_title] = parser.payment_information(payment_url)
-    global_data[executor_title] = parser.executor_information(executor_url)
-    # global_data[inserts_title] = parser.inserte_information(inserts_url)
-    global_data[jurnal_title] = parser.jornal_information(jurnal_url)
-    global_data[event_title] = parser.event_information(event_url)
-    parser.save_to_docx(global_data)
-    # print(global_data)
-#     # data = {}
+        except Exception as E:
+           print(f"Error {E}")
+# if __name__ == "__main__":
+#     parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")
+#     global_data = {}
+#     links = parser.parse_links()
+#     base_url = list(links.values())[0]  
+#     base_title = list(links.keys())[0]
+#     payment_url =  list(links.values())[1]  
+#     payment_title =  list(links.keys())[1] 
+#     executor_url =  list(links.values())[2]  
+#     executor_title =  list(links.keys())[2] 
+#     inserts_url =  list(links.values())[3]  
+#     inserts_title =  list(links.keys())[3]
+#     jurnal_url =  list(links.values())[4]  
+#     jurnal_title =  list(links.keys())[4]
+#     event_url =  list(links.values())[5]  
+#     event_title =  list(links.keys())[5]        
+#     global_data[base_title] = parser.base_information(base_url)
+#     global_data[payment_title] = parser.payment_information(payment_url)
+#     global_data[executor_title] = parser.executor_information(executor_url)
+#     # global_data[inserts_title] = parser.inserte_information(inserts_url)
+#     global_data[jurnal_title] = parser.jornal_information(jurnal_url)
+#     global_data[event_title] = parser.event_information(event_url)
+#     parser.save_to_docx(global_data)
+#     # print(global_data)
+# #     # data = {}
