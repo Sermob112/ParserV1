@@ -41,31 +41,32 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
 
         parR = ParserR(self.file_name)
         
-        parOld = ParserOldR()
+        parOld = ParserOldR(self.file_name)
         if hasattr(self, 'mass') and self.mass is not None:
             for i in self.mass:
                 try:
                    
-                    parR.make_link_num(i, self.folder_path_out)
-                    parR.parse_head()
-                    parR.get_supplier_links(i)
-                    parR.documents(i)
-                    parR.get_result_contracts(i)
-                    parR.Make_Dock(i)
+                    # parR.make_link_num(i, self.folder_path_out)
+                    # parR.parse_head()
+                    # parR.get_supplier_links(i)
+                    # parR.documents(i)
+                    # parR.get_result_contracts(i)
+                    # parR.Make_Dock(i)
 
-                    # parOld.make_link_num(i, self.folder_path_out)
-                    # parOld.parse_head()
-                    # parOld.make_doc()
+                    parOld.make_link_num(i, self.folder_path_out)
+                    parOld.parse_head()
+                    parOld.make_doc()
 
                 except Exception as e:
-                    try:
-                        parOld.make_link_num(i, self.folder_path_out)
-                        parOld.parse_head()
-                        parOld.make_doc()
-                        # self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")
-                    except Exception as e:
-                        self.textBrowser.append(f"Не получилось спарсить элемент {i}: {e}")
-                        continue
+                    print(e)
+                    # try:
+                    #     parOld.make_link_num(i, self.folder_path_out)
+                    #     parOld.parse_head()
+                    #     parOld.make_doc()
+                    #     # self.textBrowser.append(f"Ошибка при обработке элемента {i}: {e}")
+                    # except Exception as e:
+                    #     self.textBrowser.append(f"Не получилось спарсить элемент {i}: {e}")
+                    #     continue
                 # else:
                 #     continue
         else:

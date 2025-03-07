@@ -215,6 +215,8 @@ class  ParserOld:
                 lines = i.get_text().strip().splitlines()
                 Mass = [line.strip() for line in lines if line.strip()]
                 JornalMass = JornalMass + Mass
+
+        print(JornalMass)
         return JornalMass
     
     def get_documents(self, link):

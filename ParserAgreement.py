@@ -9,6 +9,10 @@ import json
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from docx import Document
 
 
@@ -138,15 +142,25 @@ class AgreementParser:
     
     def parse_four_level(self,  url ):
         self.driver.get(url)
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_all_elements_located((By.CLASS_NAME, 'container'))
+            )
+        except Exception as e:
+            print("Ошибка ожидания загрузки:", e)
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-        
+        self.data = {}
         data = {}
         container = soup.find('div', id='event-journal-wrapper')
         # containers = soup.find_all('div', class_='container')
         if container:  # Нас интересуют контейнеры, начиная с 5-го
            self._parse_general_info(container, data)
+        self.data = data
         return data
     
+    def get_event_data(self):
+        """Геттер для получения данных"""
+        return self.data
     def close(self):
         self.driver.quit()
 
@@ -428,22 +442,23 @@ class AgreementParser:
 # Пример использования
 # if __name__ == "__main__":
 #     parser = AgreementParser("https://zakupki.gov.ru/epz/contractfz223/card/contract-info.html?id=21555118")
-#     parser.start_contract_parser("Test")
-    # data = {}
-    # try:
-    #     # Получаем все ссылки
-    #     links = parser.parse_links()
-    #     if links:
-    #         # Парсим первую ссылку
-    #         first_link_url, first_link_text = links[0]
-    #         second_link_url, second_link_text = links[1]
-    #         third_link_url, third_link_text = links[2]
-    #         four_link_url,four_link_text = links[3]
-    #         data[first_link_text] = parser.parse_first_level(first_link_url)
-    #         data[second_link_text] = parser.parse_second_level(second_link_url)
-    #         data[third_link_text] = parser.parse_third_level(third_link_url)
-    #         data[four_link_text] = parser.parse_four_level(four_link_url)
-    #         parser.save_to_docx(data)
-            # print(data)  # Выводим результат
-    # finally:
-    #     parser.close()
+#     # parser.start_contract_parser("Test")
+#     data = {}
+#     try:
+#         # Получаем все ссылки
+#         links = parser.parse_links()
+#         if links:
+#             # Парсим первую ссылку
+#             first_link_url, first_link_text = links[0]
+#             second_link_url, second_link_text = links[1]
+#             third_link_url, third_link_text = links[2]
+#             four_link_url,four_link_text = links[3]
+#             data[first_link_text] = parser.parse_first_level(first_link_url)
+#             data[second_link_text] = parser.parse_second_level(second_link_url)
+#             data[third_link_text] = parser.parse_third_level(third_link_url)
+#             data[four_link_text] = parser.parse_four_level(four_link_url)
+#             # parser.save_to_docx(data)
+#             data = parser.get_event_data()
+#             print(data)
+#     finally:
+#         parser.close()
