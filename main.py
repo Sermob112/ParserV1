@@ -1,9 +1,9 @@
 
 from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
-from ui_mainwindow import Ui_MainWindow  # Import the generated UI module
+from ui_untitled_44 import Ui_MainWindow  # Import the generated UI module
 import sys
-import chardet
-soup = 0
+
+
 from Parser import *
 from parserR import ParserR
 from ParserOldR import ParserOldR
@@ -46,16 +46,16 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
             for i in self.mass:
                 try:
                    
-                    # parR.make_link_num(i, self.folder_path_out)
-                    # parR.parse_head()
-                    # parR.get_supplier_links(i)
-                    # parR.documents(i)
-                    # parR.get_result_contracts(i)
-                    # parR.Make_Dock(i)
+                    parR.make_link_num(i, self.folder_path_out)
+                    parR.parse_head()
+                    parR.get_supplier_links(i)
+                    parR.documents(i)
+                    parR.get_result_contracts(i)
+                    parR.Make_Dock(i)
 
-                    parOld.make_link_num(i, self.folder_path_out)
-                    parOld.parse_head()
-                    parOld.make_doc()
+                    # parOld.make_link_num(i, self.folder_path_out)
+                    # parOld.parse_head()
+                    # parOld.make_doc()
 
                 except Exception as e:
                     print(e)

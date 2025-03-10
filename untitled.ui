@@ -76,6 +76,12 @@
     <property name="styleSheet">
      <string notr="true">font: 12pt &quot;Impact&quot;;</string>
     </property>
+    <property name="text">
+     <string>Выберите csv файл</string>
+    </property>
+    <property name="placeholderText">
+     <string/>
+    </property>
    </widget>
    <widget class="QPushButton" name="InputFileBut">
     <property name="geometry">
@@ -120,6 +126,25 @@
     </property>
     <property name="styleSheet">
      <string notr="true">font: 12pt &quot;Impact&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Выберите место, куда будут сохранены файлы</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>10</y>
+      <width>471</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 14pt &quot;Impact&quot;;</string>
+    </property>
+    <property name="text">
+     <string>Парсер 44-ФЗ</string>
     </property>
    </widget>
   </widget>
