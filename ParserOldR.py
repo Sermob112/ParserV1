@@ -14,13 +14,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from PySide6.QtCore import QObject, Signal
 import time
 # Настройка логгирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ParserOldR:
+class ParserOldR(QObject):
+    message_signal = Signal(str)
+    
     def __init__(self,file_name):
+        super().__init__() 
         self.HEADERS = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36',
             'accept': '*/*'
@@ -52,7 +56,9 @@ class ParserOldR:
             self.main_directory = f'Закупка № {numer} '
             self.num = numer
             self.agent(number, link_text)
+            
         except Exception as e:
+           
             logger.error(f"Ошибка подключения: {e}")
             self.status = 'Ошибка подключения'
 
@@ -62,9 +68,11 @@ class ParserOldR:
             req.raise_for_status()
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
+            self.message_signal.emit(f"Успешное подключение: закупка № {numer}")
             self.status = 'Успешное подключение'
             return self.soup
         except Exception as e:
+            self.message_signal.emit(f"Ошибка подключения: закупка № {numer}: {e}")
             logger.error(f"Ошибка подключения: {e}")
             self.status = 'Ошибка подключения'
 
@@ -123,6 +131,7 @@ class ParserOldR:
                         newmainMass += cleaned_Mass
             except Exception as e:
                 logger.error(f"Ошибка при обработке контейнера: {e}")
+                self.message_signal.emit(f"Ошибка при обработке контейнера: {e}")
         mainMass.append(newmainMass)
         mainMass.append(JornalMass)
         mainMass.append(DockMass)
@@ -160,9 +169,11 @@ class ParserOldR:
             try:
                 link = "https://zakupki.gov.ru" + self.contract_info_link
                 par_agreement = AgreementParser(link)
+                par_agreement.message_signal.connect(self.message_signal.emit)
                 par_agreement.start_contract_parser(file_path=f"{self.filePath}/{self.main_directory + self.ObjectName}")
                 self.contract_data_event = par_agreement.get_event_data()
             except Exception as e:
+                self.message_signal.emit(f"Ошибка при парсинге договора: {e}")
                 logger.error(f"Ошибка при парсинге договора: {e}")
             return agreements
         else:
@@ -224,6 +235,7 @@ class ParserOldR:
                 all_data = [dict(zip(headers, rows[i:i + len(headers)])) for i in range(0, len(rows), len(headers))]
 
         except Exception as e:
+            self.message_signal.emit(f"Ошибка при парсинге Сведений о договорах: {e}")
             print("Ошибка в методе get_journals:", e)
 
         driver.quit()
@@ -290,6 +302,7 @@ class ParserOldR:
 
             self.status = 'Успешное обновление Журнала'
         except Exception as e:
+            self.message_signal.emit(f"Ошибка обработки Журнала событий: {e}")
             print(f'Ошибка обработки Журнала событий: {e}')
     def get_documents(self, link):
         titlesMass = []
@@ -322,8 +335,10 @@ class ParserOldR:
                                             f.write(response.content)
                                     else:
                                         logger.error(f"Не удалось скачать файл: {linkl}")
+                                        self.message_signal.emit(f"Не удалось скачать файл: {linkl}")
                     except Exception as e:
                         logger.error(f"Произошла ошибка: {e}")
+                        self.message_signal.emit(f"Ошибка при парсинге Документов: {e}")
     
     def make_doc(self):
         mainMass = self.main_info()
@@ -338,7 +353,9 @@ class ParserOldR:
                 else:
                     doc.add_paragraph(str(item))
             doc.save(f"{self.filePath}/{self.main_directory + self.ObjectName}/Все данные о закупке №{self.num}.docx")
+            self.message_signal.emit(f"Успешная запись файлов №{self.num}")
         except Exception as e:
+            self.message_signal.emit(f"Ошибка записи файлов: {e}")
             logger.error(f"Ошибка записи файлов: {e}")
             self.status = 'Ошибка записи файлов'
 

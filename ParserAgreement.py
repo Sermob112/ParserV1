@@ -14,10 +14,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from docx import Document
+from PySide6.QtCore import QObject, Signal
 
-
-class AgreementParser:
+class AgreementParser(QObject):
+    message_signal = Signal(str)
     def __init__(self, link):
+        super().__init__()
         self.link = link
         self.base_url = "https://zakupki.gov.ru"
         self.driver = self._init_driver()
@@ -437,6 +439,9 @@ class AgreementParser:
 
                 # Сохраняем данные в .docx
                 self.save_to_docx(data, f"{file_path}/Все данные по договору {self.contract}.docx")
+                self.message_signal.emit(f"Контракт {self.contract} успешно обработан")
+        except Exception as E:
+           self.message_signal.emit(f"Произошла ошибка с парсингом контракта {self.contract}:{E}")
         finally:
             self.close()
 # Пример использования

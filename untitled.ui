@@ -144,7 +144,7 @@
      <string notr="true">font: 14pt &quot;Impact&quot;;</string>
     </property>
     <property name="text">
-     <string>Парсер 44-ФЗ</string>
+     <string>Парсер 223-ФЗ</string>
     </property>
    </widget>
    <widget class="QPushButton" name="Stop_but">
