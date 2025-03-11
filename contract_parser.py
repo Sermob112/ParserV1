@@ -12,12 +12,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from PySide6.QtCore import QObject, Signal
+
+
 from docx import Document
 
 
 
-class ContractParser:
+class ContractParser(QObject):
+    message_signal = Signal(str)
+
     def __init__(self, link):
+        super().__init__()
         self.link = link
         self.base_url = "https://zakupki.gov.ru"
         self.driver = self._init_driver()
@@ -489,7 +495,9 @@ class ContractParser:
             global_data[jurnal_title] = self.jornal_information(jurnal_url)
             global_data[event_title] = self.event_information(event_url)
             self.save_to_docx(global_data, f"{filename}/Все данные по договору {self.contract_num}.docx")
+            self.message_signal.emit(f"Контракт {self.contract_num} успешно обработан")
         except Exception as E:
+           self.message_signal.emit(f"Произошла ошибка с парсингом контракта {self.contract_num}:{E}")
            print(f"Error {E}")
 # if __name__ == "__main__":
 #     parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")

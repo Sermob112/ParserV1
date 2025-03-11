@@ -1,11 +1,12 @@
 
 from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PySide6.QtCore import QThread, Signal
 from ui_untitled_44 import Ui_MainWindow  # Import the generated UI module
 import sys
 
-
+from ParserThread import ParserThread
 from Parser import *
-from parserR import ParserR
+
 from ParserOldR import ParserOldR
 from ParserOld import * 
 
@@ -31,11 +32,79 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
     def __init__(self):
         super(MyWindow, self).__init__()
         self.setupUi(self)  # Call setupUi to initialize the UI
-        self.Parse_but.clicked.connect(self.test)
+        self.Parse_but.clicked.connect(self.start_parsing)
         self.InputFileBut.clicked.connect(self.open_file_dialog)
         self.OutPutFileBut.clicked.connect(self.open_file_dialog_to_load)
+        self.Stop_but.clicked.connect(self.toggle_pause_resume)
+        self.parser_thread = None 
+        self.mass = None
+        self.is_paused = False 
+        self.progressBar.setValue(0) 
         # self.InputFileBut_2.clicked.connect(self.test_mass)
         # self.new_win_but.clicked.connect(self.new_win)
+
+    def start_parsing(self):
+        if self.parser_thread and self.parser_thread.isRunning():
+            self.textBrowser.append("Парсинг уже запущен")
+            return
+
+        if not hasattr(self, 'file_name') or not hasattr(self, 'folder_path_out'):
+            self.textBrowser.append("Выберите файл и папку для вывода")
+            return
+
+        self.textBrowser.append("Начался парсинг...")
+
+        self.progressBar.setValue(0)  # Сбрасываем прогресс-бар
+     
+
+        # Создаем поток
+        self.parser_thread = ParserThread(self.file_name, self.folder_path_out, self.mass)
+        
+        # Подключаем сигналы потока
+        self.parser_thread.message_signal.connect(self.update_text_browser)
+        self.parser_thread.finished_signal.connect(self.on_parsing_finished)
+        self.parser_thread.progress_signal.connect(self.update_progress_bar)
+        
+        # Запускаем поток
+        self.parser_thread.start()
+    def toggle_pause_resume(self):
+        if self.parser_thread is None:
+            return
+
+        if self.is_paused:
+            # Если поток приостановлен, возобновляем
+            self.parser_thread.resume()
+            self.Stop_but.setText("Приостановить")
+            self.textBrowser.append("Парсинг возобновлен")
+        else:
+            # Если поток работает, приостанавливаем
+            self.parser_thread.pause()
+            self.Stop_but.setText("Возобновить")
+            self.textBrowser.append("Парсинг приостановлен")
+
+        self.is_paused = not self.is_paused  # Меняем состояние флага
+    def update_progress_bar(self, value):
+        # Обновляем значение прогресс-бара
+        self.progressBar.setValue(value)
+    def stop_parsing(self):
+        if self.parser_thread:
+            self.parser_thread.stop()
+            self.textBrowser.append("Парсинг остановлен")
+            self.Stop_but.setText("Приостановить")
+            self.is_paused = False
+    def update_text_browser(self, message):
+        # Обновляем интерфейс из основного потока
+        self.textBrowser.append(message)
+
+    def on_parsing_finished(self):
+        # Действия после завершения парсинга
+        self.textBrowser.append("Парсинг завершен")
+        
+        # Очищаем поток
+        if self.parser_thread:
+            self.parser_thread.quit()  # Завершаем поток
+            self.parser_thread.wait()  # Ждем завершения
+            self.parser_thread = None
 
     def test(self):
 

@@ -11,10 +11,15 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from docx import Document
 from contract_parser import ContractParser
+from PySide6.QtCore import QObject, Signal
 import mimetypes
+from urllib.parse import unquote
 
-class ParserR:
+class ParserR(QObject):
+    message_signal = Signal(str)
+  
     def __init__(self,file_name):
+        super().__init__() 
         self.log_data = []
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 YaBrowser/23.3.0.2246 Yowser/2.5 Safari/537.36',
@@ -27,6 +32,7 @@ class ParserR:
         self.contract_data_event = None
         self.file_name_to_version_controll = file_name
         self.contract_parser = None
+        
         
 
     def make_link_num(self, numer: str, file_path: str) -> None:
@@ -43,12 +49,14 @@ class ParserR:
             link_text = 'https://zakupki.gov.ru/' + a_tag.get('href')
             self.main_directory = f'Закупка № {numer}'
             self.num = numer
-            self.agent(file_path, link_text)
+            self.agent(file_path, link_text, numer)
             self.status = 'Успешное подключение'
+            
         except Exception as e:
+            
             self.status = f'Ошибка подключения: {e}'
 
-    def agent(self, file_path: str, link: str) -> Optional[BeautifulSoup]:
+    def agent(self, file_path: str, link: str,numer) -> Optional[BeautifulSoup]:
         self.file_path = file_path
         try:
             req = requests.get(link, headers=self.headers)
@@ -56,9 +64,11 @@ class ParserR:
             src = req.text
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
+            self.message_signal.emit(f"Закупка № {numer} успешное подключение")
             return self.soup
         except Exception as e:
             self.status = f'Ошибка подключения: {e}'
+            self.message_signal.emit(f"Ошибка подключения: закупка № {numer}: {e}")
             return None
 
     def parse_head(self) -> Dict:
@@ -93,6 +103,7 @@ class ParserR:
             return serial_date
         except Exception as e:
             self.status = f'Произошла ошибка с парсингом заголовка: {e}'
+            self.message_signal.emit(f"Произошла ошибка с парсингом заголовка: {e}")
             return {}
 
     def _parse_zakupchik(self) -> List[Dict]:
@@ -139,6 +150,7 @@ class ParserR:
                     tabs_of_links[title] = link_url
             except Exception as e:
                 self.status = f'Ошибка при парсинге ссылок: {e}'
+                self.message_signal.emit(f"Ошибка при парсинге ссылок: {e}")
         
         return tabs_of_links
 
@@ -172,6 +184,7 @@ class ParserR:
             return new_dict
         except Exception as e:
             self.status = f'Ошибка при парсинге общей информации: {e}'
+            self.message_signal.emit(f"Ошибка при парсинге общей информации: {e}")
             return new_dict
 
     def _get_title(self, info) -> Optional[str]:
@@ -414,7 +427,9 @@ class ParserR:
                         self.get_supplier_docs(full_link)
                     elif 'contractCard' in full_link:
                         self.contract_parser = ContractParser(full_link)
+                        self.contract_parser.message_signal.connect(self.message_signal.emit)
                         self.contract_parser.start(f"{self.file_path}/{self.main_directory + self.object_name}")
+                       
                         self.contract_data_event = self.contract_parser.get_event_data()
                         full_link = full_link.replace('common-info.html', 'document-info.html')
                         self.get_contract_details(full_link)
@@ -446,6 +461,7 @@ class ParserR:
             return data
         except Exception as e:
             self.status = f'Ошибка парсинга Журнала: {e}'
+            self.message_signal.emit(f"Ошибка парсинга Журнала: {e}")
             return []
         
     def version_controll(self, data, file_path, contrac_event_data_rework):
@@ -498,6 +514,7 @@ class ParserR:
 
             self.status = 'Успешное обновление Журнала'
         except Exception as e:
+            self.message_signal.emit(f"Ошибка обработки Журнала событий: {e}")
             print(f'Ошибка обработки Журнала событий: {e}')
                     
          
@@ -523,6 +540,7 @@ class ParserR:
             self.status = 'Успешный парсинг поставщиков'
             return data
         except Exception as e:
+            self.message_signal.emit(f"Ошибка парсинга поставщиков: {e}")
             self.status = f'Ошибка парсинга поставщиков: {e}'
             return {}
     def other_info(self):
@@ -549,6 +567,7 @@ class ParserR:
                     self.version_controll(data_journal, self.file_name_to_version_controll, self.contract_data_event)
                    
             except Exception as e:
+                self.message_signal.emit(f"Ошибка обработки {title}: {e}")
                 print(f"Ошибка обработки {title}: {e}")
         
         return data
@@ -589,6 +608,7 @@ class ParserR:
                             self.downloader(file_link, title_text, file_name)
         except Exception as e:
             print(f"Ошибка при получении документов: {e}")
+            self.message_signal.emit(f"Ошибка при получении документов: {e}")
 
     def downloader(self, link, title_text, file_name):
         """Скачивает файл по ссылке с проверками и обработкой ошибок."""
@@ -604,6 +624,7 @@ class ParserR:
                 try:
                     os.makedirs(save_path, exist_ok=True)
                 except OSError as e:
+                    self.message_signal.emit(f"Ошибка при создании директории {save_path}: {e}")
                     print(f"Ошибка при создании директории {save_path}: {e}")
                     return
 
@@ -638,6 +659,7 @@ class ParserR:
                             if 'download' in file_link or 'file' in file_link:
                                 self.downloader(file_link, title_text, file_name)
         except Exception as e:
+            self.message_signal.emit(f"Ошибка при получении контрактных документов: {e}")
             print(f"Ошибка при получении контрактных документов: {e}")
 
     def get_contract_details(self, link):
@@ -645,19 +667,23 @@ class ParserR:
 
     def get_electronic_documents(self, link):
         self.download_documents(link, 'block-lot card-attachments__block', 'block-lot card-attachments__block', 'title pb-0', 'col-12')
-
+    def sanitize_filename(self,filename, max_length=100):
+        # Удаляем все запрещенные символы
+        filename = re.sub(r'[\\/:"*?<>|\n\r]+', '', filename)
+       
+        return filename[:max_length]
     def download_documents(self, link, main_class, container_class, title_class, content_class):
-        req = requests.get(url=link, headers=self.HEADERS)
+        req = requests.get(url=link, headers=self.headers)
         src = req.text
         soup = BeautifulSoup(src, "lxml")
-        
+
         containers = soup.find_all(class_=container_class)
         for container in containers:
             title = container.find(class_=title_class)
             if not title:
                 continue
-            title_text = title.get_text().strip()
-            
+            title_text = self.sanitize_filename(title.get_text().strip())
+
             content_blocks = container.find_all(class_=content_class)
             for block in content_blocks:
                 links = block.find_all('a')
@@ -665,41 +691,39 @@ class ParserR:
                     try:
                         href = link.get('href')
                         if 'download' in href or 'file' in href:
-                            filename = re.sub(r'\s*\([^)]*\)', '', link.get_text().strip())
+                            # Используем title, если он есть, иначе fallback на текст ссылки
+                            filename = link.get('title', link.get_text()).strip()
+                            filename = self.sanitize_filename(filename)
+
                             self.save_file(href, title_text, filename)
+
                     except Exception as e:
-                        print(f"Произошла ошибка: {str(e)}")
+                        print(f"Ошибка при скачивании файла: {str(e)}")
+                        self.message_signal.emit(f"Ошибка при скачивании документов: {str(e)}")
                         continue
 
     def save_file(self, url, title_text, filename):
-        response = requests.get(url, headers=self.HEADERS, stream=True)
+        response = requests.get(url, headers=self.headers, stream=True)
         
         if response.status_code == 200:
-            # Определяем расширение файла из заголовков
-            content_type = response.headers.get("Content-Type")
-            extension = mimetypes.guess_extension(content_type) if content_type else ""
-
-            # Если расширение не определилось, пытаемся получить его из URL
-            if not extension:
-                extension = os.path.splitext(url.split("?")[0])[1]  # Берём часть после последней точки в URL
-
-            # Формируем полное имя файла с расширением
-            filename = re.sub(r'\s*\([^)]*\)', '', filename).strip()  # Чистим название файла
-            if not filename.endswith(extension) and extension:  # Добавляем расширение, если его нет
-                filename += extension
+            # Чистим название файла от лишнего текста в скобках
+            filename = re.sub(r'\s*\([^)]*\)', '', filename).strip()
 
             # Создаём директорию
             directory = f"{self.file_path}/{self.main_directory + self.object_name}/{title_text}"
             os.makedirs(directory, exist_ok=True)
 
-            # Сохраняем файл
+            # Полный путь к файлу
             file_path = os.path.join(directory, filename)
+
+            # Сохраняем файл
             with open(file_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
                     
             print(f"Файл сохранён: {file_path}")
         else:
+            self.message_signal.emit(f"Не удалось скачать файл: {url}")
             print(f"Не удалось скачать файл: {url}")
     def status_log(self):
         self.log_data.append(self.status)
@@ -769,9 +793,10 @@ class ParserR:
             os.makedirs(f"{self.file_path}/{self.main_directory + self.object_name}", exist_ok=True)
             doc_path = f"{self.file_path}/{self.main_directory + self.object_name}/Все данные о закупке №{self.num}.docx"
             doc.save(doc_path)
-            
+            self.message_signal.emit(f"Успешная запись файлов №{self.num}")
             self.status = "Успешная запись файлов"
         except Exception as e:
+            self.message_signal.emit(f"Ошибка записи файлов: {str(e)}")
             self.status = f"Ошибка записи файлов: {str(e)}"
         
         self.status_log()
