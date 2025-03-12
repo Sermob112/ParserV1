@@ -44,7 +44,7 @@ class ParserThread(QThread):
                         self.parR.get_result_contracts(i)
                         self.parR.Make_Dock(i)
                 
-                        self.message_signal.emit(f"Обработан элемент: {i}")
+                        self.message_signal.emit(f"Закупка №{i} обработана")
                     except Exception as e:
                         self.message_signal.emit(f"Ошибка при обработке элемента {i}: {e}")
 

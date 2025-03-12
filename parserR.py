@@ -2,18 +2,20 @@ import csv
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
-import locale
 import re
 from typing import Dict, List, Optional
-import json
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from docx import Document
 from contract_parser import ContractParser
 from PySide6.QtCore import QObject, Signal
-import mimetypes
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import unquote
+import time
 
 class ParserR(QObject):
     message_signal = Signal(str)
@@ -441,34 +443,98 @@ class ParserR(QObject):
             print(f"Ошибка получения ссылок: {e}")
         
         return link_mass
+    # def journal_of_events(self, link):
+    #     """Парсит журнал событий."""
+    #     try:
+    #         soup = BeautifulSoup(self._get_page_source(link), 'lxml')
+    #         table = soup.find(class_='table mb-0 displaytagTable')
+            
+    #         if not table:
+    #             self.status = 'Журнал не найден'
+    #             return []
+            
+    #         headers = [th.get_text().strip() for th in table.find_all('th')]
+    #         rows = [td.get_text().strip() for td in table.find_all('td')]
+            
+    #         data = [dict(zip(headers, rows[i:i+len(headers)])) for i in range(0, len(rows), len(headers))]
+            
+    #         self.status = 'Успешный парсинг Журнала'
+    #         # print(data)
+    #         return data
+    #     except Exception as e:
+    #         self.status = f'Ошибка парсинга Журнала: {e}'
+    #         self.message_signal.emit(f"Ошибка парсинга Журнала: {e}")
+    #         return []
+        
     def journal_of_events(self, link):
-        """Парсит журнал событий."""
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Запуск без GUI
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920,1080")
+        
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.get(link)
+
+        all_data = []  # <-- Инициализация переменной до блока try
+
         try:
-            soup = BeautifulSoup(self._get_page_source(link), 'lxml')
-            table = soup.find(class_='table mb-0 displaytagTable')
-            
-            if not table:
-                self.status = 'Журнал не найден'
-                return []
-            
-            headers = [th.get_text().strip() for th in table.find_all('th')]
-            rows = [td.get_text().strip() for td in table.find_all('td')]
-            
-            data = [dict(zip(headers, rows[i:i+len(headers)])) for i in range(0, len(rows), len(headers))]
-            
-            self.status = 'Успешный парсинг Журнала'
-            # print(data)
-            return data
+            # Закрываем модальное окно, если оно есть
+            try:
+                close_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.CLASS_NAME, 'btn-close'))
+                )
+                close_button.click()
+                time.sleep(1)  # Даем время на закрытие
+            except:
+                print("Модального окна нет или уже закрыто.")
+
+            # Проверяем, есть ли выпадающий список для выбора количества записей на странице
+            select_boxes = driver.find_elements(By.CLASS_NAME, 'select-record-per-page--number')
+            if select_boxes:
+                select_box = select_boxes[0]  # Берем первый найденный элемент
+                select_box.click()
+                time.sleep(1)
+
+                # Проверяем, есть ли опция "50"
+                option_50s = driver.find_elements(By.ID, '_50')
+                if option_50s:
+                    option_50 = option_50s[0]
+                    option_50.click()
+                    time.sleep(3)  # Даем время на подгрузку данных
+                else:
+                    print("Опция '50' не найдена, продолжаем с дефолтным значением.")
+            else:
+                print("Выпадающий список пагинации не найден, продолжаем.")
+
+            # Теперь парсим данные
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'tabBoxWrapper'))
+            )
+
+            html = driver.page_source
+            soup = BeautifulSoup(html, 'lxml')
+
+            containerMain3 = soup.find(class_='table mb-0 displaytagTable')
+            if containerMain3:
+                headers = [th.get_text().strip().replace('\n', '') for th in containerMain3.find_all('th')]
+                rows = [td.get_text().strip().replace('\n', '') for td in containerMain3.find_all('td')]
+                all_data = [dict(zip(headers, rows[i:i + len(headers)])) for i in range(0, len(rows), len(headers))]
+
         except Exception as e:
-            self.status = f'Ошибка парсинга Журнала: {e}'
-            self.message_signal.emit(f"Ошибка парсинга Журнала: {e}")
-            return []
+            self.message_signal.emit(f"Ошибка при парсинге Журнал Событий\Версий: {e}")
+            print("Ошибка в методе get_journals:", e)
+
+        driver.quit()
+        return all_data    
         
     def version_controll(self, data, file_path, contrac_event_data_rework):
         if contrac_event_data_rework != None:
             combained_data = data + self.contrac_event_data_rework(contrac_event_data_rework)
+            print("Списки соеденены")
+            # print(combained_data)
         else: 
             combained_data = data
+            print("Списки не соеденены")
       
         try:
             # Читаем CSV, загружаем все как строки, чтобы избежать преобразования номеров
@@ -476,7 +542,7 @@ class ParserR(QObject):
                 df = pd.read_csv(file_path, encoding='windows-1251', sep=';', dtype=str)
             except FileNotFoundError:
                 df = pd.DataFrame()
-
+            df.columns = df.columns.str.strip()
             # Проверяем наличие столбца
             if "Реестровый номер закупки" not in df.columns:
                 print("В файле нет нужного столбца 'Реестровый номер закупки'.")
@@ -513,6 +579,7 @@ class ParserR(QObject):
                     lineterminator='\n', quoting=csv.QUOTE_NONNUMERIC)
 
             self.status = 'Успешное обновление Журнала'
+            self.message_signal.emit(f"Версии закупки {self.num} и контракта успешно сохранен")
         except Exception as e:
             self.message_signal.emit(f"Ошибка обработки Журнала событий: {e}")
             print(f'Ошибка обработки Журнала событий: {e}')
@@ -801,3 +868,11 @@ class ParserR(QObject):
         
         self.status_log()
         return global_dict
+
+# if __name__ == "__main__":
+#     parser = ParserR("TEST 44.csv")
+#     parser.make_link_num("0860200000824010096", "C:/Users/Sergey/Download")
+#     parser.parse_head()
+#     parser.get_supplier_links("0860200000824010096")
+#     parser.other_info()
+  

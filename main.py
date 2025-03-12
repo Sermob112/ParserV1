@@ -179,6 +179,15 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
                     # Добавляем элемент второго столбца в массив
                     data_from_second_column.append(row[1].replace("№", ""))
         return data_from_second_column
+    
+    def closeEvent(self, event):
+        if self.parser_thread and self.parser_thread.isRunning():
+            self.parser_thread.stop()  # Останавливаем поток парсинга
+            self.parser_thread.quit()  # Завершаем поток
+            self.parser_thread.wait()  # Дожидаемся завершения
+
+        event.accept()  # Подтверждаем закрытие окна
+        QApplication.quit()  # Полностью завершаем приложение
 
 def application():
     app = QApplication(sys.argv)

@@ -158,6 +158,8 @@ class AgreementParser(QObject):
         if container:  # Нас интересуют контейнеры, начиная с 5-го
            self._parse_general_info(container, data)
         self.data = data
+        if  self.data == None:
+            self.message_signal.emit(f"Произошла ошибка записи журнала событий контракта {self.contract}")
         return data
     
     def get_event_data(self):

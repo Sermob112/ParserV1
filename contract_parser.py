@@ -27,6 +27,8 @@ class ContractParser(QObject):
         self.link = link
         self.base_url = "https://zakupki.gov.ru"
         self.driver = self._init_driver()
+        self.contract_num = None
+        self.data = None
     def _init_driver(self):
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Включаем headless-режим
@@ -172,6 +174,8 @@ class ContractParser(QObject):
             for container in containers[4:]:
                 self._parse_general_info(container, data)
         self.data = data
+        if  self.data == None:
+            self.message_signal.emit(f"Произошла ошибка записи журнала событий контракта {self.contract_num}")
         return data
     
     def get_event_data(self):
@@ -475,52 +479,121 @@ class ContractParser(QObject):
     def start(self, filename):
         global_data = {}
         try:
+
             links = self.parse_links()
-            base_url = list(links.values())[0]  
-            base_title = list(links.keys())[0]
-            payment_url =  list(links.values())[1]  
-            payment_title =  list(links.keys())[1] 
-            executor_url =  list(links.values())[2]  
-            executor_title =  list(links.keys())[2] 
-            inserts_url =  list(links.values())[3]  
-            inserts_title =  list(links.keys())[3]
-            jurnal_url =  list(links.values())[4]  
-            jurnal_title =  list(links.keys())[4]
-            event_url =  list(links.values())[5]  
-            event_title =  list(links.keys())[5]       
+
+            keys = list(links.keys())
+            values = list(links.values())
+
+            # Проверяем, есть ли нужный ключ
+            has_executor = "Исполнение (расторжение) контракта" in keys
+
+            base_url = values[0]
+            base_title = keys[0]
+
+            payment_url = values[1]
+            payment_title = keys[1]
+
+            if has_executor:
+                executor_url = values[2]
+                executor_title = keys[2]
+                inserts_url = values[3]
+                inserts_title = keys[3]
+                jurnal_url = values[4]
+                jurnal_title = keys[4]
+                event_url = values[5]
+                event_title = keys[5]
+            else:
+                inserts_url = values[2]
+                inserts_title = keys[2]
+                jurnal_url = values[3]
+                jurnal_title = keys[3]
+                event_url = values[4]
+                event_title = keys[4]
+
             global_data[base_title] = self.base_information(base_url)
             global_data[payment_title] = self.payment_information(payment_url)
-            global_data[executor_title] = self.executor_information(executor_url)
-            # global_data[inserts_title] = parser.inserte_information(inserts_url)
+
+            if has_executor:
+                global_data[executor_title] = self.executor_information(executor_url)
+
             global_data[jurnal_title] = self.jornal_information(jurnal_url)
             global_data[event_title] = self.event_information(event_url)
-            self.save_to_docx(global_data, f"{filename}/Все данные по договору {self.contract_num}.docx")
+
+            self.save_to_docx(global_data, f"{filename}/Все данные по контракту {self.contract_num}.docx")
             self.message_signal.emit(f"Контракт {self.contract_num} успешно обработан")
+
+            # links = self.parse_links()
+            # base_url = list(links.values())[0]  
+            # base_title = list(links.keys())[0]
+            # payment_url =  list(links.values())[1]  
+            # payment_title =  list(links.keys())[1] 
+            # executor_url =  list(links.values())[2]  
+            # executor_title =  list(links.keys())[2] 
+            # inserts_url =  list(links.values())[3]  
+            # inserts_title =  list(links.keys())[3]
+            # jurnal_url =  list(links.values())[4]  
+            # jurnal_title =  list(links.keys())[4]
+            # event_url =  list(links.values())[5]  
+            # event_title =  list(links.keys())[5]       
+            # global_data[base_title] = self.base_information(base_url)
+            # global_data[payment_title] = self.payment_information(payment_url)
+            # global_data[executor_title] = self.executor_information(executor_url)
+            # # global_data[inserts_title] = parser.inserte_information(inserts_url)
+            # global_data[jurnal_title] = self.jornal_information(jurnal_url)
+            # global_data[event_title] = self.event_information(event_url)
+            # self.save_to_docx(global_data, f"{filename}/Все данные по контракту {self.contract_num}.docx")
+            # self.message_signal.emit(f"Контракт {self.contract_num} успешно обработан")
         except Exception as E:
            self.message_signal.emit(f"Произошла ошибка с парсингом контракта {self.contract_num}:{E}")
            print(f"Error {E}")
-# if __name__ == "__main__":
-#     parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/common-info.html?reestrNumber=2645211102824000046&contractInfoId=97549520")
-#     global_data = {}
-#     links = parser.parse_links()
-#     base_url = list(links.values())[0]  
-#     base_title = list(links.keys())[0]
-#     payment_url =  list(links.values())[1]  
-#     payment_title =  list(links.keys())[1] 
-#     executor_url =  list(links.values())[2]  
-#     executor_title =  list(links.keys())[2] 
-#     inserts_url =  list(links.values())[3]  
-#     inserts_title =  list(links.keys())[3]
-#     jurnal_url =  list(links.values())[4]  
-#     jurnal_title =  list(links.keys())[4]
-#     event_url =  list(links.values())[5]  
-#     event_title =  list(links.keys())[5]        
-#     global_data[base_title] = parser.base_information(base_url)
-#     global_data[payment_title] = parser.payment_information(payment_url)
-#     global_data[executor_title] = parser.executor_information(executor_url)
-#     # global_data[inserts_title] = parser.inserte_information(inserts_url)
-#     global_data[jurnal_title] = parser.jornal_information(jurnal_url)
-#     global_data[event_title] = parser.event_information(event_url)
-#     parser.save_to_docx(global_data)
-#     # print(global_data)
-# #     # data = {}
+
+
+
+if __name__ == "__main__":
+    parser = ContractParser("https://zakupki.gov.ru/epz/contract/contractCard/event-journal.html?reestrNumber=1143503369124000423&contractInfoId=98550047")
+    global_data = {}
+    links = parser.parse_links()
+
+    keys = list(links.keys())
+    values = list(links.values())
+
+    # Проверяем, есть ли нужный ключ
+    has_executor = "Исполнение (расторжение) контракта" in keys
+
+    base_url = values[0]
+    base_title = keys[0]
+
+    payment_url = values[1]
+    payment_title = keys[1]
+
+    if has_executor:
+        executor_url = values[2]
+        executor_title = keys[2]
+        inserts_url = values[3]
+        inserts_title = keys[3]
+        jurnal_url = values[4]
+        jurnal_title = keys[4]
+        event_url = values[5]
+        event_title = keys[5]
+    else:
+        inserts_url = values[2]
+        inserts_title = keys[2]
+        jurnal_url = values[3]
+        jurnal_title = keys[3]
+        event_url = values[4]
+        event_title = keys[4]
+
+    global_data[base_title] = parser.base_information(base_url)
+    global_data[payment_title] = parser.payment_information(payment_url)
+
+    if has_executor:
+        global_data[executor_title] = parser.executor_information(executor_url)
+
+    global_data[jurnal_title] = parser.jornal_information(jurnal_url)
+    global_data[event_title] = parser.event_information(event_url)
+
+
+    # parser.save_to_docx(global_data)
+    # print(global_data)
+#     # data = {}

@@ -235,7 +235,7 @@ class ParserOldR(QObject):
                 all_data = [dict(zip(headers, rows[i:i + len(headers)])) for i in range(0, len(rows), len(headers))]
 
         except Exception as e:
-            self.message_signal.emit(f"Ошибка при парсинге Сведений о договорах: {e}")
+            self.message_signal.emit(f"Ошибка при парсинге Журнал Событий: {e}")
             print("Ошибка в методе get_journals:", e)
 
         driver.quit()
@@ -267,7 +267,7 @@ class ParserOldR(QObject):
             except FileNotFoundError:
                 df = pd.DataFrame()
 
-            
+            df.columns = df.columns.str.strip()
             if "Реестровый номер закупки" not in df.columns:
                 print("В файле нет нужного столбца 'Реестровый номер закупки'.")
                 return
