@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QMainWindow, QApplication, QFileDialog
 from PySide6.QtCore import QThread, Signal
 from ui_untitled_223 import Ui_MainWindow  # Import the generated UI module
-
+from queue import Queue
 import sys
 
 from ParserThread import ParserThread
@@ -46,7 +46,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         # self.new_win_but.clicked.connect(self.new_win)
 
     def start_parsing(self):
-        if self.parser_thread and self.parser_thread.isRunning():
+        if hasattr(self, 'threads') and any(t.isRunning() for t in self.threads):
             self.textBrowser.append("Парсинг уже запущен")
             return
 
@@ -55,20 +55,41 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
             return
 
         self.textBrowser.append("Начался парсинг...")
+        self.progressBar.setValue(0)
 
-        self.progressBar.setValue(0)  # Сбрасываем прогресс-бар
-     
+        from queue import Queue
+        self.task_queue = Queue()
+        for item in self.mass:
+            self.task_queue.put(item)
 
-        # Создаем поток
-        self.parser_thread = ParserThreadOld(self.file_name, self.folder_path_out, self.mass)
-        
-        # Подключаем сигналы потока
-        self.parser_thread.message_signal.connect(self.update_text_browser)
-        self.parser_thread.finished_signal.connect(self.on_parsing_finished)
-        self.parser_thread.progress_signal.connect(self.update_progress_bar)
-        
-        # Запускаем поток
-        self.parser_thread.start()
+        self.total_items = self.task_queue.qsize()
+        self.processed_items = 0
+
+        num_threads = 4
+        self.threads = []
+        self.running_threads = num_threads
+
+        for _ in range(num_threads):
+            thread = ParserThread(self.file_name, self.folder_path_out, self.task_queue) ##44
+            # thread = ParserThreadOld(self.file_name, self.folder_path_out, self.task_queue) ##223
+            thread.message_signal.connect(self.update_text_browser)
+            thread.item_processed_signal.connect(self.handle_progress)
+            thread.finished_signal.connect(self.check_all_threads_finished)
+            self.threads.append(thread)
+            thread.start()
+
+
+
+    def handle_progress(self):
+        self.processed_items += 1
+        progress = int((self.processed_items / self.total_items) * 100)
+        self.progressBar.setValue(progress)
+
+    def check_all_threads_finished(self):
+        self.running_threads -= 1
+        if self.running_threads == 0:
+            self.textBrowser.append("Парсинг завершен.")
+
     def toggle_pause_resume(self):
         if self.parser_thread is None:
             return

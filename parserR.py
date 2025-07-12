@@ -79,7 +79,15 @@ class ParserR(QObject):
         
         try:
             serial_number = self.soup.find(class_="registry-entry__header-mid__number")
-            name = self.soup.find(class_='cardMainInfo__content').get_text().strip().replace('"', '').replace('\r', '')[:60].replace(' ', '_').replace('\n', '')
+            name = (self.soup.find(class_='cardMainInfo__content').get_text()
+            .strip()
+            .replace('"', '')
+            .replace('\r', '')
+            .replace('\n', '')
+            .replace(':', '')  # Удаляем двоеточия
+            .replace('/', '-')  # Заменяем слэши
+            [:50]  # Более строгое ограничение длины
+            .replace(' ', '_'))
             self.object_name = f' {name}'
             
             if serial_number:
@@ -323,10 +331,10 @@ class ParserR(QObject):
         Возвращает структурированные данные о документах.
         """
         data = {}
-        link = f'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber={num}'
+        # link = f'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber={self.num}'
         
         try:
-            req = requests.get(url=link, headers=self.headers)
+            req = requests.get(url=num, headers=self.headers)
             req.raise_for_status()
             soup = BeautifulSoup(req.text, "lxml")
             col_sm_12 = soup.find_all(class_='col-sm-12 blockInfo')
@@ -341,6 +349,7 @@ class ParserR(QObject):
                 
             self.status = 'Успешный парсинг документов'
         except Exception as e:
+            print(f"Ошибка парсинга документов: {e}")
             self.status = f'Ошибка парсинга документов: {e}'
         
         return data
@@ -623,7 +632,7 @@ class ParserR(QObject):
                 if self.main_info_body(soup):
                     data[title] = self.main_info_body(soup)
                 elif title == 'Документы':
-                    data[title] = self.documents(soup)
+                    data[title] = self.documents(link)
                 elif title == 'Результаты определения поставщика (подрядчика, исполнителя)':
                     data[title] = self.supplier_result(link)
                     self.get_supplier_docs()
@@ -871,8 +880,9 @@ class ParserR(QObject):
 
 # if __name__ == "__main__":
 #     parser = ParserR("TEST 44.csv")
-#     parser.make_link_num("0860200000824010096", "C:/Users/Sergey/Download")
+#     parser.make_link_num("0848300057125000063", "C:/Users/Sergey/Download")
 #     parser.parse_head()
-#     parser.get_supplier_links("0860200000824010096")
+#     parser.get_supplier_links("0848300057125000063")
 #     parser.other_info()
+#     parser.Make_Dock("0848300057125000063")
   

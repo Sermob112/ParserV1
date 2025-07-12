@@ -3,78 +3,64 @@ from PySide6.QtCore import QThread, QMutex, QWaitCondition
 from ParserOldR import ParserOldR
 
 
+
 class ParserThreadOld(QThread):
     message_signal = Signal(str)
     finished_signal = Signal()
-    progress_signal = Signal(int)
+    item_processed_signal = Signal()
 
-    def __init__(self, file_name, folder_path_out, mass):
+    def __init__(self, file_name, folder_path_out, task_queue):
         super().__init__()
         self.file_name = file_name
         self.folder_path_out = folder_path_out
-        self.mass = mass
-        self.parR = ParserOldR(self.file_name)
-        self.parR.message_signal.connect(self.message_signal.emit)
-
-         # Флаги для управления потоком
-        self._is_paused = False
+        self.task_queue = task_queue
         self._is_stopped = False
+        self._is_paused = False
         self.mutex = QMutex()
         self.condition = QWaitCondition()
+
     def run(self):
-        # self.message_signal.emit("Начался парсинг")  # Сообщение о начале парсинга
-
-       
-      
         try:
-            total_elements = len(self.mass) if self.mass else 0
-            processed_elements = 0
-            if self.mass is not None:
-                for i in self.mass:
-                    if self._is_stopped:  # Проверяем, не остановлен ли поток
-                        break
+            while not self.task_queue.empty() and not self._is_stopped:
+                self.mutex.lock()
+                if self._is_paused:
+                    self.condition.wait(self.mutex)
+                self.mutex.unlock()
 
-                    self.mutex.lock()
-                    if self._is_paused:  # Если поток приостановлен, ждем
-                        self.condition.wait(self.mutex)
-                    self.mutex.unlock()
-                    try:
-                        self.parR.make_link_num(i, self.folder_path_out)
-                        self.parR.parse_head()
-                        self.parR.make_doc()
-                
-                        self.message_signal.emit(f"Закупка №{i} обработана")
-                    except Exception as e:
-                        self.message_signal.emit(f"Ошибка при обработке элемента {i}: {e}")
+                try:
+                    task = self.task_queue.get_nowait()
+                except:
+                    break
 
-                    # Обновляем прогресс
-                    processed_elements += 1
-                    progress = int((processed_elements / total_elements) * 100)
-                    self.progress_signal.emit(progress)
-            else:
-                self.message_signal.emit("Выберите файл для парсинга")
+                parser = ParserOldR(self.file_name)
+                try:
+                    parser.make_link_num(task, self.folder_path_out)
+                    parser.parse_head()
+                    parser.make_doc()
+                    self.message_signal.emit(f"Закупка №{task} обработана")
+                except Exception as e:
+                    self.message_signal.emit(f"Ошибка при обработке {task}: {e}")
 
-            # self.message_signal.emit("Парсинг завершен")
+                self.item_processed_signal.emit()
+                self.task_queue.task_done()
+
         except Exception as e:
             self.message_signal.emit(f"Ошибка в потоке: {e}")
         finally:
-         
-            self.finished_signal.emit()  # Сигнал о завершении работы
+            self.finished_signal.emit()
+
 
     def pause(self):
-        # Приостанавливаем поток
         self.mutex.lock()
         self._is_paused = True
         self.mutex.unlock()
 
     def resume(self):
-        # Возобновляем поток
         self.mutex.lock()
         self._is_paused = False
         self.condition.wakeAll()
         self.mutex.unlock()
 
     def stop(self):
-        # Останавливаем поток
         self._is_stopped = True
-        self.resume() 
+        self.resume()
