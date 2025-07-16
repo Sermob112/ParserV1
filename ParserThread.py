@@ -16,7 +16,6 @@ class ParserThread(QThread):
         self.file_name = file_name
         self.folder_path_out = folder_path_out
         self.task_queue = task_queue
-
         self.parR = ParserR(self.file_name)
         self.parR.message_signal.connect(self.message_signal.emit)
 
@@ -42,7 +41,7 @@ class ParserThread(QThread):
                     self.parR.make_link_num(task, self.folder_path_out)
                     self.parR.parse_head()
                     self.parR.get_supplier_links(task)
-                    self.parR.documents(task)
+                    self.parR.other_info()
                     self.parR.get_result_contracts(task)
                     self.parR.Make_Dock(task)
 

@@ -77,6 +77,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
             thread.finished_signal.connect(self.check_all_threads_finished)
             self.threads.append(thread)
             thread.start()
+            # thread.run()
 
 
 

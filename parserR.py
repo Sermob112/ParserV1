@@ -67,6 +67,7 @@ class ParserR(QObject):
             self.soup = BeautifulSoup(src, 'lxml')
             self.status = 'Успешное подключение'
             self.message_signal.emit(f"Закупка № {numer} успешное подключение")
+            print(self.soup)
             return self.soup
         except Exception as e:
             self.status = f'Ошибка подключения: {e}'
@@ -326,31 +327,35 @@ class ParserR(QObject):
         self.status = 'успешный парсинг выпадающих элементов'
         return collaps_data
     def documents(self, num: str) -> Dict[str, List]:
-        """
-        Парсит документы, связанные с закупкой, и сохраняет их на диск.
-        Возвращает структурированные данные о документах.
-        """
         data = {}
-        # link = f'https://zakupki.gov.ru/epz/order/notice/ea20/view/documents.html?regNumber={self.num}'
-        
         try:
             req = requests.get(url=num, headers=self.headers)
             req.raise_for_status()
             soup = BeautifulSoup(req.text, "lxml")
-            col_sm_12 = soup.find_all(class_='col-sm-12 blockInfo')
+            col_sm_12 = soup.find_all(class_='col-sm-12 blockInfo')  # Убедитесь, что класс правильный
             
             for col in col_sm_12:
-                titles = col.find(class_='blockInfo__title').get_text().strip()
-                infos = self._parse_document_section(col)
-                
-                if infos:
-                    data[titles] = infos
-                    self._download_files(col, titles)
-                
+                try:  # Обработка ошибок для каждого документа
+                    title_element = col.find(class_='blockInfo__title')
+                    if not title_element:
+                        print("⚠️ Не найден заголовок документа, пропускаю...")
+                        continue
+                    
+                    titles = title_element.get_text().strip()
+                    infos = self._parse_document_section(col)  # Убедитесь, что метод не возвращает None
+                    
+                    if infos:  # Если данные получены
+                        data[titles] = infos
+                        self._download_files(col, titles)  # Скачиваем файлы
+                except Exception as e:
+                    print(f"⚠️ Ошибка при обработке документа: {e}, продолжаю...")
+                    continue  # Пропускаем проблемный документ и идём дальше
+            
             self.status = 'Успешный парсинг документов'
         except Exception as e:
-            print(f"Ошибка парсинга документов: {e}")
+            print(f"⚠️ Ошибка при загрузке страницы документов: {e}")
             self.status = f'Ошибка парсинга документов: {e}'
+            
         
         return data
 
@@ -379,33 +384,47 @@ class ParserR(QObject):
         return infos
 
     def _download_files(self, col, titles: str) -> None:
-        """
-        Скачивает файлы, связанные с документом, и сохраняет их на диск.
-        """
         files_links = {}
-        link_of_files = col.find_all(class_='blockFilesTabDocs')
-        
-        for lux in link_of_files:
-            luxit = lux.find_all('a')
-            for links in luxit:
-                if 'download' in links.get('href') or 'file' in links.get('href'):
-                    linkl = links.get('href')
-                    titk = links.get('title')
-                    files_links[titk] = linkl
-        
-        if files_links:
-            dir_path = os.path.join(self.file_path, self.main_directory + self.object_name, titles)
-            os.makedirs(dir_path, exist_ok=True)
+        try:
+            link_of_files = col.find_all(class_='blockFilesTabDocs')
             
-            for title, url in files_links.items():
-                try:
-                    response = requests.get(url, headers=self.headers)
-                    response.raise_for_status()
-                    with open(os.path.join(dir_path, title), "wb") as f:
-                        f.write(response.content)
-                except Exception as e:
-                    print(f'Ошибка при скачивании файла {title}: {e}')
-
+            for lux in link_of_files:
+                luxit = lux.find_all('a')
+                for links in luxit:
+                    try:
+                        href = links.get('href')
+                        title = links.get('title')
+                        
+                        # Пропускаем, если нет href или title
+                        if not href or not title:
+                            print(f"⚠️ У ссылки отсутствует href или title, пропускаю: {links}")
+                            continue
+                        
+                        # Проверяем, содержит ли href ключевые слова
+                        if 'download' in href or 'file' in href:
+                            files_links[title] = href
+                    except Exception as e:
+                        print(f"⚠️ Ошибка при обработке ссылки: {e}, пропускаю...")
+                        continue
+            
+            if files_links:
+                dir_path = os.path.join(self.file_path, self.main_directory + self.object_name, titles)
+                os.makedirs(dir_path, exist_ok=True)
+                
+                for title, url in files_links.items():
+                    try:
+                        response = requests.get(url, headers=self.headers)
+                        response.raise_for_status()
+                        
+                        file_path = os.path.join(dir_path, title)
+                        with open(file_path, "wb") as f:
+                            f.write(response.content)
+                        print(f"✅ Файл '{title}' успешно скачан")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка при скачивании файла '{title}': {e}")
+                        continue
+        except Exception as e:
+            print(f"⚠️ Критическая ошибка в _download_files: {e}")
 
     def _get_page_source(self, link):
         """Запускает браузер в headless-режиме и возвращает HTML-страницу."""
@@ -878,11 +897,11 @@ class ParserR(QObject):
         self.status_log()
         return global_dict
 
-# if __name__ == "__main__":
-#     parser = ParserR("TEST 44.csv")
-#     parser.make_link_num("0848300057125000063", "C:/Users/Sergey/Download")
-#     parser.parse_head()
-#     parser.get_supplier_links("0848300057125000063")
-#     parser.other_info()
-#     parser.Make_Dock("0848300057125000063")
+if __name__ == "__main__":
+    parser = ParserR("TEST 44.csv")
+    parser.make_link_num("0108500000425000888", "C:/Users/Sergey/Download")
+    parser.parse_head()
+    parser.get_supplier_links("0108500000425000888")
+    parser.other_info()
+    parser.Make_Dock("0108500000425000888")
   
