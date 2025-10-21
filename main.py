@@ -98,7 +98,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         if self.is_paused:
             # Если поток приостановлен, возобновляем
             self.parser_thread.resume()
-            self.Stop_but.setText("Приостановить")
+            self.Stop_but.setText("Остановить")
             self.textBrowser.append("Парсинг возобновлен")
         else:
             # Если поток работает, приостанавливаем
@@ -114,7 +114,7 @@ class MyWindow(QMainWindow, Ui_MainWindow):  # Inherit from Ui_MainWindow
         if self.parser_thread:
             self.parser_thread.stop()
             self.textBrowser.append("Парсинг остановлен")
-            self.Stop_but.setText("Приостановить")
+            self.Stop_but.setText("Остановить")
             self.is_paused = False
     def update_text_browser(self, message):
         # Обновляем интерфейс из основного потока

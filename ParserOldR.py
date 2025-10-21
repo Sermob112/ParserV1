@@ -78,7 +78,7 @@ class ParserOldR(QObject):
 
     def parse_head(self):
         source = self.soup.find(class_="col-6 pr-0 mr-21px")
-        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"', '').replace('\r', '')[:48].replace(' ', '_').replace('\n', '')
+        self.ObjectName = source.find(class_='registry-entry__body-value').get_text().strip().replace('"', '').replace('\r', '').replace('*', '').replace('-', '').replace(':', '')[:48].replace(' ', '_').replace('\n', '')
         return self.ObjectName
 
     def get_links(self):

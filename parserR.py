@@ -899,9 +899,9 @@ class ParserR(QObject):
 
 if __name__ == "__main__":
     parser = ParserR("TEST 44.csv")
-    parser.make_link_num("0108500000425000888", "C:/Users/Sergey/Download")
+    parser.make_link_num("0573100002021000004", "C:/Users/Sergey/Download")
     parser.parse_head()
-    parser.get_supplier_links("0108500000425000888")
+    parser.get_supplier_links("0573100002021000004")
     parser.other_info()
-    parser.Make_Dock("0108500000425000888")
+    parser.Make_Dock("0573100002021000004")
   
